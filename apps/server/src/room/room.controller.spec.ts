@@ -1,0 +1,59 @@
+import { BadRequestException } from '@nestjs/common';
+import { describe, expect, it } from 'vitest';
+import { RoomController } from './room.controller';
+import { RoomService } from './room.service';
+import { InMemoryRoomStore } from './room.store';
+
+function setup() {
+  const store = new InMemoryRoomStore();
+  const service = new RoomService(store);
+  const controller = new RoomController(service);
+  return { controller };
+}
+
+describe('RoomController — createRoom handSize validation', () => {
+  // Regression tests: handSize used to reach RoomService.createRoom (and eventually
+  // packages/engine's dealHands) completely unvalidated. An oversized value throws deep inside
+  // dealHands once the deck can't cover it -- uncaught, and *before* room.status flips to
+  // IN_PROGRESS in RoomService.startMatch -- permanently stranding the room in LOBBY with no
+  // client-facing error at all.
+
+  it('accepts a room created with no handSize override (defaults apply)', () => {
+    const { controller } = setup();
+    expect(() => controller.createRoom({ displayName: 'Alice' })).not.toThrow();
+  });
+
+  it('accepts handSize values within the safe range', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice', handSize: 5 }),
+    ).not.toThrow();
+    expect(() =>
+      controller.createRoom({ displayName: 'Bob', handSize: 10 }),
+    ).not.toThrow();
+  });
+
+  it('rejects a handSize large enough to exhaust the deck', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice', handSize: 50 }),
+    ).toThrow(BadRequestException);
+  });
+
+  it('rejects a zero or negative handSize', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice', handSize: 0 }),
+    ).toThrow(BadRequestException);
+    expect(() =>
+      controller.createRoom({ displayName: 'Bob', handSize: -3 }),
+    ).toThrow(BadRequestException);
+  });
+
+  it('rejects a non-integer handSize', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice', handSize: 4.5 }),
+    ).toThrow(BadRequestException);
+  });
+});
