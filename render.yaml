@@ -1,0 +1,28 @@
+# Render Blueprint for this pnpm monorepo. See docs/superpowers/specs/2026-08-24-ship-it-live-design.md
+# §2. Verify field names (env/rootDir/staticPublishPath, etc.) against Render's current
+# render.yaml reference when connecting this Blueprint, since the schema does evolve.
+services:
+  - type: web
+    name: crazy8-server
+    env: node
+    rootDir: apps/server
+    plan: free
+    buildCommand: cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @crazy8/engine build && pnpm --filter server build
+    startCommand: pnpm run start:prod
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ALLOWED_ORIGIN
+        sync: false
+
+  - type: web
+    name: crazy8-client
+    env: static
+    rootDir: apps/client
+    plan: free
+    buildCommand: cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @crazy8/engine build && pnpm --filter client build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
