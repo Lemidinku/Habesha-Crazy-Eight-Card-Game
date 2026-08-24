@@ -30,6 +30,21 @@ interface JoinRoomBody {
 const MIN_HAND_SIZE = 1;
 const MAX_HAND_SIZE = 10;
 
+/** 5s floor keeps a reconnect grace period meaningful at all; 10min ceiling keeps a disconnected
+ * seat from blocking a match indefinitely under FR-15's auto-pilot promise. */
+const MIN_RECONNECT_GRACE_MS = 5_000;
+const MAX_RECONNECT_GRACE_MS = 600_000;
+
+const MAX_DISPLAY_NAME_LENGTH = 32;
+
+function assertValidDisplayName(displayName: string): void {
+  if (displayName.length > MAX_DISPLAY_NAME_LENGTH) {
+    throw new BadRequestException(
+      `displayName must be ${MAX_DISPLAY_NAME_LENGTH} characters or fewer`,
+    );
+  }
+}
+
 /** The thin REST half of the room lifecycle (DESIGN.md §5.1) -- everything after a player is
  * seated goes over the WebSocket gateway instead. */
 @Controller('rooms')
@@ -42,6 +57,7 @@ export class RoomController {
     if (!displayName) {
       throw new BadRequestException('displayName is required');
     }
+    assertValidDisplayName(displayName);
 
     if (body.handSize !== undefined) {
       if (
@@ -51,6 +67,18 @@ export class RoomController {
       ) {
         throw new BadRequestException(
           `handSize must be an integer between ${MIN_HAND_SIZE} and ${MAX_HAND_SIZE}`,
+        );
+      }
+    }
+
+    if (body.reconnectGraceMs !== undefined) {
+      if (
+        !Number.isInteger(body.reconnectGraceMs) ||
+        body.reconnectGraceMs < MIN_RECONNECT_GRACE_MS ||
+        body.reconnectGraceMs > MAX_RECONNECT_GRACE_MS
+      ) {
+        throw new BadRequestException(
+          `reconnectGraceMs must be an integer between ${MIN_RECONNECT_GRACE_MS} and ${MAX_RECONNECT_GRACE_MS}`,
         );
       }
     }
@@ -74,6 +102,7 @@ export class RoomController {
     if (!displayName) {
       throw new BadRequestException('displayName is required');
     }
+    assertValidDisplayName(displayName);
 
     const result = this.roomService.joinRoom(code, displayName);
     if (!result.ok) {

@@ -57,3 +57,70 @@ describe('RoomController — createRoom handSize validation', () => {
     ).toThrow(BadRequestException);
   });
 });
+
+describe('RoomController — createRoom reconnectGraceMs validation', () => {
+  it('accepts a room created with no reconnectGraceMs override (defaults apply)', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice' }),
+    ).not.toThrow();
+  });
+
+  it('accepts reconnectGraceMs values within the safe range', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice', reconnectGraceMs: 5_000 }),
+    ).not.toThrow();
+    expect(() =>
+      controller.createRoom({ displayName: 'Bob', reconnectGraceMs: 600_000 }),
+    ).not.toThrow();
+  });
+
+  it('rejects a reconnectGraceMs below the minimum', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice', reconnectGraceMs: 1_000 }),
+    ).toThrow(BadRequestException);
+  });
+
+  it('rejects a reconnectGraceMs above the maximum', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({
+        displayName: 'Alice',
+        reconnectGraceMs: 3_600_000,
+      }),
+    ).toThrow(BadRequestException);
+  });
+
+  it('rejects a non-integer reconnectGraceMs', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice', reconnectGraceMs: 100.5 }),
+    ).toThrow(BadRequestException);
+  });
+});
+
+describe('RoomController — displayName length cap', () => {
+  it('accepts a displayName at exactly the 32-character limit', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'a'.repeat(32) }),
+    ).not.toThrow();
+  });
+
+  it('rejects a displayName over 32 characters on createRoom', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'a'.repeat(33) }),
+    ).toThrow(BadRequestException);
+  });
+
+  it('rejects a displayName over 32 characters on joinRoom', () => {
+    const { controller } = setup();
+    controller.createRoom({ displayName: 'Alice' });
+    expect(() =>
+      controller.joinRoom('AAAAAA', { displayName: 'b'.repeat(33) }),
+    ).toThrow(BadRequestException);
+  });
+});
