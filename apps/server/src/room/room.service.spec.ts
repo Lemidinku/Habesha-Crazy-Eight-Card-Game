@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Logger } from '@nestjs/common';
 import { ROOM_REAP_IDLE_MS, RoomService } from './room.service';
 import { InMemoryRoomStore } from './room.store';
 
@@ -505,5 +506,17 @@ describe('RoomService — abandoned-room reap', () => {
     vi.advanceTimersByTime(ROOM_REAP_IDLE_MS);
 
     expect(store.get(room.id)).toBeDefined();
+  });
+});
+
+describe('RoomService — lifecycle logging', () => {
+  it('logs when a room is created', () => {
+    const logSpy = vi.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+    const { service } = setup();
+
+    service.createRoom('Alice');
+
+    expect(logSpy).toHaveBeenCalled();
+    logSpy.mockRestore();
   });
 });

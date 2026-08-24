@@ -1,5 +1,5 @@
 import { randomUUID, timingSafeEqual } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   applyMove,
   createMatch,
@@ -60,6 +60,7 @@ export class RoomService {
   private readonly updateListeners = new Set<
     (roomId: string, events: DomainEvent[]) => void
   >();
+  private readonly logger = new Logger(RoomService.name);
 
   constructor(@Inject(ROOM_STORE) private readonly roomStore: RoomStore) {}
 
@@ -101,6 +102,7 @@ export class RoomService {
       status: 'LOBBY',
     };
     this.roomStore.save(room);
+    this.logger.log(`Room ${room.code} created by "${displayName}"`);
     this.scheduleRoomReapIfAbandoned(room);
     return { room, player };
   }
@@ -178,6 +180,9 @@ export class RoomService {
     );
     room.status = 'IN_PROGRESS';
     this.roomStore.save(room);
+    this.logger.log(
+      `Match started in room ${room.code} (${room.players.length} players)`,
+    );
 
     return ok(this.resolveAutoPilotChain(room));
   }
@@ -220,6 +225,7 @@ export class RoomService {
 
     player.connectionStatus = 'disconnected';
     this.roomStore.save(room);
+    this.logger.log(`Player ${playerId} disconnected from room ${room.code}`);
 
     const timerKey = `${roomId}:${playerId}`;
     this.clearGraceTimer(timerKey);
@@ -261,6 +267,9 @@ export class RoomService {
 
     player.autoPilot = true;
     this.roomStore.save(room);
+    this.logger.warn(
+      `Grace period expired for player ${playerId} in room ${room.code} -- auto-pilot engaged`,
+    );
 
     const { events } = this.resolveAutoPilotChain(room);
     this.emitRoomUpdated(roomId, events);
@@ -368,6 +377,9 @@ export class RoomService {
         (p) => p.connectionStatus === 'disconnected',
       );
       if (!stillAbandoned) return;
+      this.logger.log(
+        `Reaping abandoned room ${current.code} after ${ROOM_REAP_IDLE_MS}ms with no connected players`,
+      );
       this.roomStore.delete(room.id);
     }, ROOM_REAP_IDLE_MS);
     this.roomReapTimers.set(room.id, timer);
