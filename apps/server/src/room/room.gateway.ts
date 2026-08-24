@@ -17,6 +17,11 @@ interface JoinPayload {
   sessionToken: string;
 }
 
+interface ClientData {
+  roomId?: string;
+  playerId?: string;
+}
+
 /**
  * The transport adapter (DESIGN.md §2/§5): translates Socket.IO events into RoomService calls
  * and back into redacted, per-recipient payloads. Never touches the engine directly.
@@ -39,10 +44,7 @@ export class RoomGateway implements OnModuleInit, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket): void {
-    const { roomId, playerId } = client.data as {
-      roomId?: string;
-      playerId?: string;
-    };
+    const { roomId, playerId } = client.data as ClientData;
     if (!roomId || !playerId) return;
 
     const roomSockets = this.socketsByRoom.get(roomId);
@@ -75,8 +77,9 @@ export class RoomGateway implements OnModuleInit, OnGatewayDisconnect {
       return;
     }
 
-    client.data.roomId = payload.roomId;
-    client.data.playerId = payload.playerId;
+    const data = client.data as ClientData;
+    data.roomId = payload.roomId;
+    data.playerId = payload.playerId;
     client.join(payload.roomId);
 
     let roomSockets = this.socketsByRoom.get(payload.roomId);
@@ -91,10 +94,7 @@ export class RoomGateway implements OnModuleInit, OnGatewayDisconnect {
 
   @SubscribeMessage('room:leave')
   handleLeave(@ConnectedSocket() client: Socket): void {
-    const { roomId, playerId } = client.data as {
-      roomId?: string;
-      playerId?: string;
-    };
+    const { roomId, playerId } = client.data as ClientData;
     if (!roomId || !playerId) return;
 
     const result = this.roomService.leaveLobby(roomId, playerId);
@@ -108,8 +108,9 @@ export class RoomGateway implements OnModuleInit, OnGatewayDisconnect {
 
     this.socketsByRoom.get(roomId)?.delete(playerId);
     client.leave(roomId);
-    client.data.roomId = undefined;
-    client.data.playerId = undefined;
+    const data = client.data as ClientData;
+    data.roomId = undefined;
+    data.playerId = undefined;
 
     if (result.value.room) {
       this.syncRoom(roomId);
@@ -118,10 +119,7 @@ export class RoomGateway implements OnModuleInit, OnGatewayDisconnect {
 
   @SubscribeMessage('match:start')
   handleStart(@ConnectedSocket() client: Socket): void {
-    const { roomId, playerId } = client.data as {
-      roomId?: string;
-      playerId?: string;
-    };
+    const { roomId, playerId } = client.data as ClientData;
     if (!roomId || !playerId) {
       client.emit('error', {
         code: 'NOT_JOINED',
@@ -148,10 +146,7 @@ export class RoomGateway implements OnModuleInit, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() command: Command,
   ): void {
-    const { roomId, playerId } = client.data as {
-      roomId?: string;
-      playerId?: string;
-    };
+    const { roomId, playerId } = client.data as ClientData;
     if (!roomId || !playerId) {
       client.emit('error', {
         code: 'NOT_JOINED',
