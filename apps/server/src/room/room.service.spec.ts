@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { RoomService } from './room.service';
+import { ROOM_REAP_IDLE_MS, RoomService } from './room.service';
 import { InMemoryRoomStore } from './room.store';
 
 function setup() {
@@ -437,5 +437,73 @@ describe('RoomService — reconnection and grace-period auto-play', () => {
     ).not.toBe(upNextPlayerId);
     expect(updates).toHaveLength(1);
     expect(updates[0].events.length).toBeGreaterThan(0);
+  });
+});
+
+describe('RoomService — abandoned-room reap', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('reaps a room nobody ever connects a socket to, once the idle window elapses', () => {
+    const { service, store } = setup();
+    const { room } = service.createRoom('Alice'); // host starts 'disconnected' by default
+
+    vi.advanceTimersByTime(ROOM_REAP_IDLE_MS);
+
+    expect(store.get(room.id)).toBeUndefined();
+  });
+
+  it('does not reap a room once its creator connects', () => {
+    const { service, store } = setup();
+    const { room, player } = service.createRoom('Alice');
+    service.authenticate(room.id, player.playerId, player.sessionToken);
+
+    vi.advanceTimersByTime(ROOM_REAP_IDLE_MS);
+
+    expect(store.get(room.id)).toBeDefined();
+  });
+
+  it('reaps a room where every seat disconnects mid-lobby', () => {
+    const { service, store } = setup();
+    const { room, player: host } = service.createRoom('Alice');
+    service.authenticate(room.id, host.playerId, host.sessionToken);
+    const joined = service.joinRoom(room.code, 'Bob');
+    if (!joined.ok) throw new Error('setup failed');
+    service.authenticate(
+      room.id,
+      joined.value.player.playerId,
+      joined.value.player.sessionToken,
+    );
+
+    service.markDisconnected(room.id, host.playerId);
+    service.markDisconnected(room.id, joined.value.player.playerId);
+
+    vi.advanceTimersByTime(ROOM_REAP_IDLE_MS);
+
+    expect(store.get(room.id)).toBeUndefined();
+  });
+
+  it('does not reap a room while at least one seat is still connected', () => {
+    const { service, store } = setup();
+    const { room, player: host } = service.createRoom('Alice');
+    service.authenticate(room.id, host.playerId, host.sessionToken);
+    const joined = service.joinRoom(room.code, 'Bob');
+    if (!joined.ok) throw new Error('setup failed');
+    service.authenticate(
+      room.id,
+      joined.value.player.playerId,
+      joined.value.player.sessionToken,
+    );
+
+    service.markDisconnected(room.id, host.playerId); // Bob is still connected
+
+    vi.advanceTimersByTime(ROOM_REAP_IDLE_MS);
+
+    expect(store.get(room.id)).toBeDefined();
   });
 });

@@ -11,6 +11,14 @@ import { generateRoomCode } from './room-code';
 import { ROOM_STORE, type RoomStore } from './room.store';
 import type { Room, RoomPlayer, RoomSettings } from './room.types';
 
+/** How long a room with every seat disconnected is kept before being reaped -- generous
+ * relative to the per-player reconnect grace period (which is host-configurable down to 5s, see
+ * room.controller.ts) since this is a distinct, room-wide safety net rather than the reconnect
+ * UX itself. Fixes the leak where a room nobody ever finishes joining (closed before the socket
+ * ever connects), or a match everyone walks away from mid-game, would otherwise sit in
+ * InMemoryRoomStore forever. */
+export const ROOM_REAP_IDLE_MS = 10 * 60_000;
+
 export type RoomResult<T> =
   { ok: true; value: T } | { ok: false; error: string };
 
@@ -42,6 +50,10 @@ function safeTokensEqual(a: string, b: string): boolean {
 @Injectable()
 export class RoomService {
   private readonly graceTimers = new Map<
+    string,
+    ReturnType<typeof setTimeout>
+  >();
+  private readonly roomReapTimers = new Map<
     string,
     ReturnType<typeof setTimeout>
   >();
@@ -89,6 +101,7 @@ export class RoomService {
       status: 'LOBBY',
     };
     this.roomStore.save(room);
+    this.scheduleRoomReapIfAbandoned(room);
     return { room, player };
   }
 
@@ -119,6 +132,7 @@ export class RoomService {
     };
     room.players.push(player);
     this.roomStore.save(room);
+    this.scheduleRoomReapIfAbandoned(room);
     return ok({ room, player });
   }
 
@@ -214,6 +228,8 @@ export class RoomService {
       this.expireGracePeriod(roomId, playerId);
     }, room.settings.reconnectGraceMs);
     this.graceTimers.set(timerKey, timer);
+
+    this.scheduleRoomReapIfAbandoned(room);
   }
 
   /** Authenticates a socket against a previously-issued session token -- used identically for
@@ -231,6 +247,7 @@ export class RoomService {
       return fail('INVALID_SESSION');
 
     this.clearGraceTimer(`${roomId}:${playerId}`);
+    this.clearRoomReapTimer(roomId);
     player.connectionStatus = 'connected';
     player.autoPilot = false;
     this.roomStore.save(room);
@@ -330,6 +347,37 @@ export class RoomService {
     if (existing) {
       clearTimeout(existing);
       this.graceTimers.delete(timerKey);
+    }
+  }
+
+  private scheduleRoomReapIfAbandoned(room: Room): void {
+    const allDisconnected = room.players.every(
+      (p) => p.connectionStatus === 'disconnected',
+    );
+    if (!allDisconnected) {
+      this.clearRoomReapTimer(room.id);
+      return;
+    }
+    if (this.roomReapTimers.has(room.id)) return;
+
+    const timer = setTimeout(() => {
+      this.roomReapTimers.delete(room.id);
+      const current = this.roomStore.get(room.id);
+      if (!current) return;
+      const stillAbandoned = current.players.every(
+        (p) => p.connectionStatus === 'disconnected',
+      );
+      if (!stillAbandoned) return;
+      this.roomStore.delete(room.id);
+    }, ROOM_REAP_IDLE_MS);
+    this.roomReapTimers.set(room.id, timer);
+  }
+
+  private clearRoomReapTimer(roomId: string): void {
+    const existing = this.roomReapTimers.get(roomId);
+    if (existing) {
+      clearTimeout(existing);
+      this.roomReapTimers.delete(roomId);
     }
   }
 
