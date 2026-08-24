@@ -1,3 +1,4 @@
+import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -17,7 +18,7 @@ describe('RoomGateway (e2e)', () => {
     }).compile();
     app = moduleFixture.createNestApplication();
     await app.listen(0);
-    const address = app.getHttpServer().address() as AddressInfo;
+    const address = (app.getHttpServer() as Server).address() as AddressInfo;
     baseUrl = `http://localhost:${address.port}`;
   });
 
@@ -48,18 +49,25 @@ describe('RoomGateway (e2e)', () => {
       .post('/rooms')
       .send({ displayName: 'Alice' })
       .expect(201);
+    const createBody = createRes.body as {
+      roomId: string;
+      code: string;
+      playerId: string;
+      sessionToken: string;
+    };
     const {
       roomId,
       code,
       playerId: alicePlayerId,
       sessionToken: aliceToken,
-    } = createRes.body;
+    } = createBody;
 
     const joinRes = await request(app.getHttpServer())
       .post(`/rooms/${code}/join`)
       .send({ displayName: 'Bob' })
       .expect(201);
-    const { playerId: bobPlayerId, sessionToken: bobToken } = joinRes.body;
+    const joinBody = joinRes.body as { playerId: string; sessionToken: string };
+    const { playerId: bobPlayerId, sessionToken: bobToken } = joinBody;
 
     const aliceSocket = connectSocket();
     const bobSocket = connectSocket();
@@ -159,17 +167,24 @@ describe('RoomGateway (e2e)', () => {
       .post('/rooms')
       .send({ displayName: 'Alice' })
       .expect(201);
+    const createBody = createRes.body as {
+      roomId: string;
+      code: string;
+      playerId: string;
+      sessionToken: string;
+    };
     const {
       roomId,
       code,
       playerId: alicePlayerId,
       sessionToken: aliceToken,
-    } = createRes.body;
+    } = createBody;
     const joinRes = await request(app.getHttpServer())
       .post(`/rooms/${code}/join`)
       .send({ displayName: 'Bob' })
       .expect(201);
-    const { playerId: bobPlayerId, sessionToken: bobToken } = joinRes.body;
+    const joinBody = joinRes.body as { playerId: string; sessionToken: string };
+    const { playerId: bobPlayerId, sessionToken: bobToken } = joinBody;
 
     const aliceSocket = connectSocket();
     const bobSocket = connectSocket();
