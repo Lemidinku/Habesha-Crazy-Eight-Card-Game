@@ -26,10 +26,10 @@ export function RoundEndOverlay() {
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-slate-800 rounded p-8 space-y-4 text-center min-w-72">
-        <h2 className="text-2xl font-semibold">Round over</h2>
-        {winnerName && <p className="text-emerald-400">{winnerName} won the round</p>}
-        <ul className="space-y-1 text-left">
+      <div className="bg-felt-raised border border-gold/25 rounded-xl p-8 space-y-4 text-center min-w-72">
+        <h2 className="font-display text-2xl font-bold text-card">Round over</h2>
+        {winnerName && <p className="text-gold font-semibold">{winnerName} won the round</p>}
+        <ul className="space-y-1 text-left text-card/80">
           {room.players.map((p) => (
             <li key={p.playerId} className="flex justify-between gap-8">
               <span>{p.displayName}</span>
@@ -41,15 +41,23 @@ export function RoundEndOverlay() {
         </ul>
         {isHost ? (
           <div className="flex gap-3 justify-center pt-2">
-            <button type="button" className="rounded bg-emerald-600 px-4 py-2 font-medium" onClick={handleContinue}>
+            <button
+              type="button"
+              className="rounded-lg bg-jade px-4 py-2 font-semibold text-felt transition hover:brightness-110"
+              onClick={handleContinue}
+            >
               Continue
             </button>
-            <button type="button" className="rounded bg-red-700 px-4 py-2 font-medium" onClick={handleEndGame}>
+            <button
+              type="button"
+              className="rounded-lg bg-crimson px-4 py-2 font-semibold text-card transition hover:brightness-110"
+              onClick={handleEndGame}
+            >
               End Game
             </button>
           </div>
         ) : (
-          <p className="text-slate-400 text-sm pt-2">Waiting for the host to continue...</p>
+          <p className="text-card/50 text-sm pt-2">Waiting for the host to continue…</p>
         )}
       </div>
     </div>

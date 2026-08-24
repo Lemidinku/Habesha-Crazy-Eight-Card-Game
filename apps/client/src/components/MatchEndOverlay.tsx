@@ -17,11 +17,11 @@ export function MatchEndOverlay() {
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-slate-800 rounded p-8 space-y-4 text-center min-w-64">
-        <h2 className="text-2xl font-semibold">{abandonerName ? 'Game ended' : 'Match over!'}</h2>
-        {abandonerName && <p className="text-slate-400">{abandonerName} left the game</p>}
-        {winner && <p className="text-emerald-400 text-lg">{winner.displayName} wins</p>}
-        <ul className="space-y-1">
+      <div className="bg-felt-raised border border-gold/25 rounded-xl p-8 space-y-4 text-center min-w-64">
+        <h2 className="font-display text-2xl font-bold text-card">{abandonerName ? 'Game ended' : 'Match over!'}</h2>
+        {abandonerName && <p className="text-card/50">{abandonerName} left the game</p>}
+        {winner && <p className="text-gold text-lg font-semibold">{winner.displayName} wins</p>}
+        <ul className="space-y-1 text-card/80">
           {sorted.map((p) => (
             <li key={p.playerId} className="flex justify-between gap-8">
               <span>{p.displayName}</span>
@@ -31,7 +31,7 @@ export function MatchEndOverlay() {
         </ul>
         <button
           type="button"
-          className="rounded bg-emerald-600 px-4 py-2 font-medium"
+          className="rounded-lg bg-jade px-4 py-2 font-semibold text-felt transition hover:brightness-110"
           onClick={returnToHome}
         >
           Back to Home

@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Room } from './room.types';
 
-/** Repository-pattern seam (DESIGN.md §3.5): RoomService depends only on this interface, so
- * swapping the in-memory implementation for a Redis-backed one later (§7 scale-out) is a new
- * class, not a rewrite of every call site. */
 export interface RoomStore {
   get(roomId: string): Room | undefined;
   getByCode(code: string): Room | undefined;

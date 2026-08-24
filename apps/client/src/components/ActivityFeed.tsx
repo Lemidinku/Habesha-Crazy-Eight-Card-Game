@@ -50,9 +50,9 @@ export function ActivityFeed() {
 
   return (
     <div className="w-full max-w-3xl">
-      <div className="text-xs text-slate-400 mb-1">Activity</div>
-      <ul className="space-y-0.5 text-sm text-slate-300 bg-slate-800/50 rounded p-2">
-        {visibleEvents.length === 0 && <li className="text-slate-500">Nothing has happened yet.</li>}
+      <div className="text-xs uppercase tracking-wide text-card/35 mb-1.5">Activity</div>
+      <ul className="space-y-1 text-sm text-card/70 bg-felt-raised/60 rounded-lg p-3">
+        {visibleEvents.length === 0 && <li className="text-card/35">Nothing has happened yet.</li>}
         {visibleEvents.map((event, i) => (
           <li key={i}>{describeEvent(event, room)}</li>
         ))}

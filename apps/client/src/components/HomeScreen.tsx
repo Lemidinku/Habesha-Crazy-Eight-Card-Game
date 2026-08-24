@@ -62,32 +62,42 @@ export function HomeScreen() {
   }
 
   return (
-    <div className="w-full max-w-sm space-y-4">
-      <h1 className="text-2xl font-semibold text-center">Crazy Eights</h1>
+    <div className="w-full max-w-sm space-y-5">
+      <div className="text-center space-y-1">
+        <h1 className="font-display text-4xl font-bold text-card tracking-tight">
+          Crazy <span className="text-gold">Eights</span>
+        </h1>
+        <p className="text-sm text-card/50">Eights and Jacks are wild. Watch for the glow.</p>
+      </div>
       <input
-        className="w-full rounded bg-slate-800 px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500"
+        className="w-full rounded-lg bg-felt-raised border border-card/10 px-3 py-2.5 text-card placeholder:text-card/35 outline-none focus:ring-2 focus:ring-gold focus:border-gold"
         placeholder="Your name"
         value={displayName}
         onChange={(e) => setDisplayName(e.target.value)}
       />
       <button
         type="button"
-        className="w-full rounded bg-emerald-600 px-3 py-2 font-medium disabled:opacity-50"
+        className="w-full rounded-lg bg-jade px-3 py-2.5 font-semibold text-felt transition hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100"
         disabled={busy || !displayName.trim()}
         onClick={handleCreate}
       >
         Create Room
       </button>
+      <div className="flex items-center gap-3 text-xs text-card/35">
+        <div className="h-px flex-1 bg-card/10" />
+        or join with a code
+        <div className="h-px flex-1 bg-card/10" />
+      </div>
       <div className="flex gap-2">
         <input
-          className="flex-1 rounded bg-slate-800 px-3 py-2 uppercase outline-none focus:ring-2 focus:ring-sky-500"
+          className="flex-1 min-w-0 rounded-lg bg-felt-raised border border-card/10 px-3 py-2.5 uppercase tracking-widest text-card placeholder:text-card/35 placeholder:tracking-normal placeholder:normal-case outline-none focus:ring-2 focus:ring-gold focus:border-gold"
           placeholder="Room code"
           value={code}
           onChange={(e) => setCode(e.target.value)}
         />
         <button
           type="button"
-          className="rounded bg-sky-600 px-4 py-2 font-medium disabled:opacity-50"
+          className="rounded-lg bg-gold px-4 py-2.5 font-semibold text-felt transition hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100"
           disabled={busy || !displayName.trim() || !code.trim()}
           onClick={handleJoin}
         >
@@ -95,7 +105,7 @@ export function HomeScreen() {
         </button>
       </div>
       {!displayName.trim() && (
-        <p className="text-center text-amber-400 text-sm">Enter your name above to create or join a room.</p>
+        <p className="text-center text-gold text-sm">Enter your name above to create or join a room.</p>
       )}
     </div>
   );

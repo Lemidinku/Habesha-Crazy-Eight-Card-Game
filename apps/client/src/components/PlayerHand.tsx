@@ -1,7 +1,7 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { extendsStack, isLegalPlay, isWild, type Card, type Suit } from '@crazy8/engine';
 import { orderCardIdsForPlay } from '../lib/cardOrdering';
-import { isRedSuit } from '../lib/cardDisplay';
+import { suitTextClass, wildRingClass } from '../lib/cardDisplay';
 import { sendCommand } from '../lib/socket';
 import type { RedactedRoundState } from '../lib/wireTypes';
 import { useRoomStore } from '../store/roomStore';
@@ -76,7 +76,7 @@ export function PlayerHand({ selectedIds, setSelectedIds }: PlayerHandProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex flex-wrap justify-center gap-2">
         {hand.map((card) => {
           const highlightable = isCardHighlightable(card, round);
@@ -88,15 +88,15 @@ export function PlayerHand({ selectedIds, setSelectedIds }: PlayerHandProps) {
               disabled={!isMyTurn}
               onClick={() => (round.phase === 'AWAITING_STACK_RESPONSE' ? handleExtendStack(card.id) : toggleCard(card.id))}
               className={[
-                'w-16 h-24 rounded border-2 flex items-center justify-center font-semibold transition-transform',
-                selected ? 'border-emerald-400 -translate-y-2' : 'border-transparent',
-                highlightable
-                  ? isRedSuit(card.suit) ? 'bg-white text-red-600' : 'bg-white text-slate-900'
-                  : isRedSuit(card.suit) ? 'bg-slate-400 text-red-900' : 'bg-slate-400 text-slate-600',
-                !isMyTurn ? 'opacity-60' : 'cursor-pointer',
+                'w-16 h-24 rounded-lg flex items-center justify-center transition',
+                highlightable ? 'bg-card' : 'bg-card/45',
+                selected ? 'ring-2 ring-gold -translate-y-2 shadow-[0_4px_14px_rgba(0,0,0,0.4)]' : wildRingClass(card),
+                !isMyTurn ? 'opacity-60' : highlightable ? 'cursor-pointer hover:-translate-y-1' : 'cursor-pointer',
               ].join(' ')}
             >
-              <CardFace card={card} />
+              <span className={highlightable ? suitTextClass(card.suit) : `${suitTextClass(card.suit)} opacity-50`}>
+                <CardFace card={card} />
+              </span>
             </button>
           );
         })}
@@ -106,26 +106,34 @@ export function PlayerHand({ selectedIds, setSelectedIds }: PlayerHandProps) {
         <div className="flex justify-center gap-3">
           <button
             type="button"
-            className="rounded bg-emerald-600 px-4 py-2 font-medium disabled:opacity-50"
+            className="rounded-lg bg-jade px-4 py-2 font-semibold text-felt transition hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100"
             disabled={selectedIds.length === 0}
             onClick={handlePlaySelected}
           >
             Play Selected
           </button>
           {round.hasDrawnThisTurn ? (
-            <button type="button" className="rounded bg-slate-700 px-4 py-2 font-medium" onClick={handleSkip}>
+            <button
+              type="button"
+              className="rounded-lg bg-felt-raised border border-card/15 px-4 py-2 font-medium text-card hover:border-card/30"
+              onClick={handleSkip}
+            >
               Skip
             </button>
           ) : (
-            <p className="text-xs text-slate-400 self-center">or click the draw pile above</p>
+            <p className="text-xs text-card/45 self-center">or click the draw pile above</p>
           )}
         </div>
       )}
 
       {isMyTurn && round.phase === 'AWAITING_STACK_RESPONSE' && (
         <div className="text-center space-y-2">
-          <p className="text-amber-300 text-sm">Click a highlighted card to extend the stack, or absorb it.</p>
-          <button type="button" className="rounded bg-slate-700 px-4 py-2 font-medium" onClick={handleAbsorbStack}>
+          <p className="text-gold text-sm">Click a highlighted card to extend the stack, or absorb it.</p>
+          <button
+            type="button"
+            className="rounded-lg bg-felt-raised border border-card/15 px-4 py-2 font-medium text-card hover:border-card/30"
+            onClick={handleAbsorbStack}
+          >
             Draw {round.pendingStack?.accumulated}
           </button>
         </div>

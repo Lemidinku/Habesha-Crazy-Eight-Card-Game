@@ -24,11 +24,11 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center py-10 px-4">
+    <div className="min-h-screen bg-felt flex flex-col items-center py-10 px-4">
       {error && (
-        <div className="mb-4 max-w-md w-full rounded bg-red-900/50 border border-red-700 px-3 py-2 text-sm flex justify-between items-center">
+        <div className="mb-4 max-w-md w-full rounded-lg bg-crimson/15 border border-crimson/40 px-3 py-2 text-sm text-card flex justify-between items-center">
           <span>{error}</span>
-          <button type="button" onClick={() => setError(null)} className="ml-4 underline shrink-0">
+          <button type="button" onClick={() => setError(null)} className="ml-4 underline shrink-0 hover:text-gold">
             dismiss
           </button>
         </div>

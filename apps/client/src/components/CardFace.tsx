@@ -6,9 +6,9 @@ import type { Card } from '@crazy8/engine';
  * (hand cards, discard pile) each have their own legal/dimmed color logic already. */
 export function CardFace({ card }: { card: Card }) {
   return (
-    <span className="flex flex-col items-center gap-0.5">
-      <span className="text-2xl leading-none">{card.rank}</span>
-      <span className="text-4xl leading-none">{SUIT_SYMBOLS[card.suit]}</span>
+    <span className="flex flex-col items-center gap-0.5 font-display font-semibold">
+      <span className="text-xl leading-none">{card.rank}</span>
+      <span className="text-3xl leading-none">{SUIT_SYMBOLS[card.suit]}</span>
     </span>
   );
 }

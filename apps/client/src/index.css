@@ -1,13 +1,31 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens for the Crazy Eights table: a deep felt background, ivory
+ * card faces, and a gold accent reserved for the game's own signature --
+ * eights are wild, so any 8 gets a gold glow wherever it appears. The app
+ * is dark-only (see :root color-scheme below, unchanged), so these are the
+ * only values that exist -- no light-mode variant.
+ */
+@theme {
+  --color-felt: #122420;
+  --color-felt-raised: #1a332e;
+  --color-card: #f7f3ea;
+  --color-ink: #1b1b1f;
+  --color-crimson: #b3374d;
+  --color-gold: #d6a24a;
+  --color-jade: #3fa37d;
+
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+
 :root {
   color-scheme: dark;
 }
 
-body {
-  margin: 0;
-}
-
-#root {
-  min-height: 100svh;
+@layer base {
+  body {
+    @apply bg-felt text-card font-body antialiased;
+  }
 }

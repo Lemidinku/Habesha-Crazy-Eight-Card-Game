@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SUIT_SYMBOLS, isRedSuit } from '../lib/cardDisplay';
+import { SUIT_SYMBOLS, isRedSuit, suitTextClass, wildRingClass } from '../lib/cardDisplay';
 import { sendCommand } from '../lib/socket';
 import { useRoomStore } from '../store/roomStore';
 import { ActivityFeed } from './ActivityFeed';
@@ -42,77 +42,99 @@ export function GameTable() {
         <button
           type="button"
           onClick={handleAbandon}
-          className="text-xs text-slate-400 hover:text-red-400 underline"
+          className="text-xs text-card/40 hover:text-crimson underline"
         >
           Leave Game
         </button>
       </div>
 
-      <div className="flex flex-wrap justify-center gap-4 text-sm">
+      <div className="flex flex-wrap justify-center gap-3 text-sm">
         {room.players.map((p) => (
           <div
             key={p.playerId}
-            className={`rounded px-3 py-2 min-w-28 ${
-              p.playerId === currentPlayer?.playerId ? 'bg-emerald-900/50 text-emerald-300' : 'bg-slate-800 text-slate-300'
-            }`}
+            className={[
+              'rounded-lg px-3 py-2 min-w-28 border transition-colors',
+              p.playerId === currentPlayer?.playerId
+                ? 'bg-jade/15 border-jade text-jade'
+                : 'bg-felt-raised border-card/10 text-card/70',
+            ].join(' ')}
           >
-            <div className="font-medium text-slate-100">{p.displayName}</div>
-            <div className="text-2xl font-bold leading-tight">{p.handCount} <span className="text-xs font-normal">cards</span></div>
-            <div className="text-xs text-slate-400">{p.matchScore} pts &middot; {p.roundsWon} win{p.roundsWon === 1 ? '' : 's'}</div>
-            {p.connectionStatus === 'disconnected' && <div className="text-amber-400">disconnected</div>}
+            <div className="font-medium text-card">{p.displayName}</div>
+            <div className="font-display text-2xl font-bold leading-tight text-card">
+              {p.handCount} <span className="text-xs font-body font-normal text-card/50">cards</span>
+            </div>
+            <div className="text-xs text-card/45">
+              {p.matchScore} pts &middot; {p.roundsWon} win{p.roundsWon === 1 ? '' : 's'}
+            </div>
+            {p.connectionStatus === 'disconnected' && <div className="text-gold">disconnected</div>}
           </div>
         ))}
       </div>
 
-      <div className="flex justify-center items-center gap-6">
+      <div className="rounded-xl bg-felt-raised border border-card/10 py-5 flex justify-center items-center gap-6">
         <div className="text-center">
-          <div className="text-xs text-slate-400 mb-1">Draw pile</div>
+          <div className="text-xs uppercase tracking-wide text-card/40 mb-1.5">Draw pile</div>
           <button
             type="button"
             onClick={handleDrawPileClick}
             disabled={!canDraw}
             className={[
-              'w-16 h-24 rounded flex flex-col items-center justify-center text-lg font-semibold transition-colors',
-              canDraw ? 'bg-slate-700 hover:bg-slate-600 cursor-pointer ring-2 ring-emerald-400' : 'bg-slate-700 cursor-default',
+              'w-16 h-24 rounded-lg flex flex-col items-center justify-center font-display text-lg font-bold transition',
+              'bg-[repeating-linear-gradient(135deg,var(--color-felt)_0px,var(--color-felt)_4px,var(--color-felt-raised)_4px,var(--color-felt-raised)_8px)] border-2',
+              canDraw ? 'border-gold cursor-pointer hover:brightness-125' : 'border-card/15 cursor-default',
             ].join(' ')}
           >
-            <span>{round.drawPileCount}</span>
-            {canDraw && <span className="text-[10px] font-normal text-emerald-300">Draw</span>}
+            <span className="text-card">{round.drawPileCount}</span>
+            {canDraw && <span className="text-[10px] font-body font-normal text-gold">Draw</span>}
           </button>
         </div>
         <div className="text-center">
-          <div className="text-xs text-slate-400 mb-1">Discard</div>
+          <div className="text-xs uppercase tracking-wide text-card/40 mb-1.5">Discard</div>
           <div
-            className={`w-16 h-24 rounded bg-white flex items-center justify-center text-lg font-semibold ${
-              topCard && isRedSuit(topCard.suit) ? 'text-red-600' : 'text-slate-900'
-            }`}
+            className={[
+              'w-16 h-24 rounded-lg bg-card flex items-center justify-center',
+              topCard ? wildRingClass(topCard) : '',
+            ].join(' ')}
           >
-            {topCard ? <CardFace card={topCard} /> : '-'}
+            {topCard ? (
+              <span className={suitTextClass(topCard.suit)}>
+                <CardFace card={topCard} />
+              </span>
+            ) : (
+              <span className="text-ink/30">-</span>
+            )}
           </div>
         </div>
         <div className="text-center">
-          <div className="text-xs text-slate-400 mb-1">Active suit</div>
-          <div className="text-3xl">{SUIT_SYMBOLS[round.currentSuit]}</div>
+          <div className="text-xs uppercase tracking-wide text-card/40 mb-1.5">Active suit</div>
+          <div className={`text-3xl ${isRedSuit(round.currentSuit) ? 'text-crimson' : 'text-card'}`}>
+            {SUIT_SYMBOLS[round.currentSuit]}
+          </div>
         </div>
         <div className="text-center">
-          <div className="text-xs text-slate-400 mb-1">Direction</div>
-          <div className="text-3xl">{round.direction === 1 ? '⟳' : '⟲'}</div>
+          <div className="text-xs uppercase tracking-wide text-card/40 mb-1.5">Direction</div>
+          <div className="text-3xl text-card">{round.direction === 1 ? '⟳' : '⟲'}</div>
         </div>
       </div>
 
       {round.pendingStack && (
-        <div className="text-center text-amber-300 text-sm flex items-center justify-center gap-1">
-          Pending draw-stack: {round.pendingStack.accumulated} cards on top of <CardFace card={round.pendingStack.topCard} />
+        <div className="text-center text-gold text-sm flex items-center justify-center gap-1.5">
+          Pending draw-stack: {round.pendingStack.accumulated} cards on top of{' '}
+          <span className={suitTextClass(round.pendingStack.topCard.suit)}>
+            <CardFace card={round.pendingStack.topCard} />
+          </span>
         </div>
       )}
 
       <div
         className={[
-          'mx-auto w-fit rounded-lg px-4 py-1.5 text-lg font-bold transition-colors',
-          isMyTurn ? 'bg-emerald-500/20 text-emerald-300 ring-2 ring-emerald-400' : 'text-slate-400 font-medium',
+          'mx-auto w-fit rounded-full px-5 py-1.5 text-lg font-display font-bold transition-colors',
+          isMyTurn
+            ? 'bg-gold/15 text-gold ring-2 ring-gold shadow-[0_0_16px_rgba(214,162,74,0.35)]'
+            : 'text-card/45 font-body font-medium',
         ].join(' ')}
       >
-        {isMyTurn ? 'Your Turn' : `${currentPlayer?.displayName ?? '...'}'s turn`}
+        {isMyTurn ? 'Your Turn' : `${currentPlayer?.displayName ?? '…'}'s turn`}
       </div>
 
       <PlayerHand selectedIds={selectedIds} setSelectedIds={setSelectedIds} />

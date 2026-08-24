@@ -1,5 +1,5 @@
 import type { Suit } from '@crazy8/engine';
-import { isRedSuit, SUIT_SYMBOLS } from '../lib/cardDisplay';
+import { SUIT_SYMBOLS, suitTextClass } from '../lib/cardDisplay';
 
 const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
 
@@ -10,24 +10,22 @@ interface SuitPickerProps {
 
 export function SuitPicker({ onChoose, onCancel }: SuitPickerProps) {
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-slate-800 rounded p-6 space-y-4 text-center">
-        <p className="font-medium">Choose the next suit</p>
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-felt-raised border border-gold/25 rounded-xl p-6 space-y-4 text-center">
+        <p className="font-display font-semibold text-card">Choose the next suit</p>
         <div className="flex gap-3">
           {SUITS.map((suit) => (
             <button
               key={suit}
               type="button"
-              className={`w-16 h-16 rounded bg-white text-2xl flex items-center justify-center hover:bg-slate-200 ${
-                isRedSuit(suit) ? 'text-red-600' : 'text-slate-900'
-              }`}
+              className={`w-16 h-16 rounded-lg bg-card text-2xl flex items-center justify-center transition hover:-translate-y-1 hover:shadow-[0_4px_14px_rgba(0,0,0,0.4)] ${suitTextClass(suit)}`}
               onClick={() => onChoose(suit)}
             >
               {SUIT_SYMBOLS[suit]}
             </button>
           ))}
         </div>
-        <button type="button" className="text-slate-400 underline text-sm" onClick={onCancel}>
+        <button type="button" className="text-card/45 hover:text-crimson underline text-sm" onClick={onCancel}>
           Cancel
         </button>
       </div>
