@@ -379,6 +379,18 @@ describe('RoomService — reconnection and grace-period auto-play', () => {
     });
   });
 
+  it('rejects authentication when the provided token has a different length than the real one', () => {
+    // Regression coverage for the constant-time comparison: crypto.timingSafeEqual throws if
+    // given two buffers of unequal length rather than returning false, so this proves that
+    // path is guarded, not just the equal-length invalid-token case above.
+    const { service } = setup();
+    const { room, player } = service.createRoom('Alice');
+    expect(service.authenticate(room.id, player.playerId, 'short')).toEqual({
+      ok: false,
+      error: 'INVALID_SESSION',
+    });
+  });
+
   it('reconnecting before the grace period expires clears autoPilot without auto-playing', () => {
     const { service } = setup();
     const { room, player: host } = service.createRoom('Alice');

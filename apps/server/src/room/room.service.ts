@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   applyMove,
@@ -20,6 +20,17 @@ function ok<T>(value: T): RoomResult<T> {
 
 function fail<T>(error: string): RoomResult<T> {
   return { ok: false, error };
+}
+
+/** sessionToken comparison must not leak timing information about how many leading characters
+ * matched, the way a plain `!==` would. `timingSafeEqual` requires equal-length buffers (it
+ * throws otherwise), so a length mismatch is checked first and short-circuits to `false` -- this
+ * leaks only the *length* of the stored token, which is always a fixed 36-character randomUUID
+ * and therefore not meaningful information to an attacker. */
+function safeTokensEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
 }
 
 /**
@@ -216,7 +227,7 @@ export class RoomService {
     const room = this.roomStore.get(roomId);
     if (!room) return fail('ROOM_NOT_FOUND');
     const player = room.players.find((p) => p.playerId === playerId);
-    if (!player || player.sessionToken !== sessionToken)
+    if (!player || !safeTokensEqual(player.sessionToken, sessionToken))
       return fail('INVALID_SESSION');
 
     this.clearGraceTimer(`${roomId}:${playerId}`);
