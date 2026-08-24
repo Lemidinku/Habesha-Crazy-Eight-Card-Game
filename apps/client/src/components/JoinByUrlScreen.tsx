@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { joinRoom } from '../lib/api';
+import { withColdStartWarning } from '../lib/coldStart';
 import { storeSession } from '../hooks/useRoomConnection';
 import { joinRoomSocket } from '../lib/socket';
 import { setRoomUrl } from '../lib/urlRoom';
@@ -16,13 +17,17 @@ export function JoinByUrlScreen({ code }: JoinByUrlScreenProps) {
   const setError = useRoomStore((s) => s.setError);
   const [displayName, setDisplayName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [wakingUp, setWakingUp] = useState(false);
 
   async function handleJoin() {
     const name = displayName.trim();
     if (!name) return;
     setBusy(true);
+    setWakingUp(false);
     try {
-      const res = await joinRoom(code, name);
+      const res = await withColdStartWarning(joinRoom(code, name), () =>
+        setWakingUp(true),
+      );
       const session = {
         roomId: res.roomId,
         code,
@@ -38,6 +43,7 @@ export function JoinByUrlScreen({ code }: JoinByUrlScreenProps) {
       setError(err instanceof Error ? err.message : 'Could not join room');
     } finally {
       setBusy(false);
+      setWakingUp(false);
     }
   }
 
@@ -63,6 +69,11 @@ export function JoinByUrlScreen({ code }: JoinByUrlScreenProps) {
       >
         Join Game
       </button>
+      {wakingUp && (
+        <p className="text-center text-gold text-sm" role="status">
+          Waking up the server — this can take up to a minute on first load.
+        </p>
+      )}
     </div>
   );
 }

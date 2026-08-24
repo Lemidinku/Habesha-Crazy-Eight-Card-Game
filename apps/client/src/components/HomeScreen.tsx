@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createRoom, joinRoom } from '../lib/api';
+import { withColdStartWarning } from '../lib/coldStart';
 import { storeSession } from '../hooks/useRoomConnection';
 import { joinRoomSocket } from '../lib/socket';
 import { setRoomUrl } from '../lib/urlRoom';
@@ -11,13 +12,17 @@ export function HomeScreen() {
   const [displayName, setDisplayName] = useState('');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
+  const [wakingUp, setWakingUp] = useState(false);
 
   async function handleCreate() {
     const name = displayName.trim();
     if (!name) return;
     setBusy(true);
+    setWakingUp(false);
     try {
-      const res = await createRoom(name);
+      const res = await withColdStartWarning(createRoom(name), () =>
+        setWakingUp(true),
+      );
       const session = {
         roomId: res.roomId,
         code: res.code,
@@ -33,6 +38,7 @@ export function HomeScreen() {
       setError(err instanceof Error ? err.message : 'Could not create room');
     } finally {
       setBusy(false);
+      setWakingUp(false);
     }
   }
 
@@ -41,8 +47,11 @@ export function HomeScreen() {
     const roomCode = code.trim().toUpperCase();
     if (!name || !roomCode) return;
     setBusy(true);
+    setWakingUp(false);
     try {
-      const res = await joinRoom(roomCode, name);
+      const res = await withColdStartWarning(joinRoom(roomCode, name), () =>
+        setWakingUp(true),
+      );
       const session = {
         roomId: res.roomId,
         code: roomCode,
@@ -58,6 +67,7 @@ export function HomeScreen() {
       setError(err instanceof Error ? err.message : 'Could not join room');
     } finally {
       setBusy(false);
+      setWakingUp(false);
     }
   }
 
@@ -104,7 +114,12 @@ export function HomeScreen() {
           Join
         </button>
       </div>
-      {!displayName.trim() && (
+      {wakingUp && (
+        <p className="text-center text-gold text-sm" role="status">
+          Waking up the server — this can take up to a minute on first load.
+        </p>
+      )}
+      {!wakingUp && !displayName.trim() && (
         <p className="text-center text-gold text-sm">Enter your name above to create or join a room.</p>
       )}
     </div>
