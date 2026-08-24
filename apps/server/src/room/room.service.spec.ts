@@ -511,7 +511,9 @@ describe('RoomService — abandoned-room reap', () => {
 
 describe('RoomService — lifecycle logging', () => {
   it('logs when a room is created', () => {
-    const logSpy = vi.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+    const logSpy = vi
+      .spyOn(Logger.prototype, 'log')
+      .mockImplementation(() => undefined);
     const { service } = setup();
 
     service.createRoom('Alice');

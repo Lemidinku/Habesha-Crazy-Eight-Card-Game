@@ -2,7 +2,9 @@ import { ArgumentsHost, BadRequestException, HttpStatus } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { AllExceptionsFilter } from './all-exceptions.filter';
 
-function createHost(response: { status: ReturnType<typeof vi.fn> }): ArgumentsHost {
+function createHost(response: {
+  status: ReturnType<typeof vi.fn>;
+}): ArgumentsHost {
   return {
     switchToHttp: () => ({
       getResponse: () => response,
@@ -18,10 +20,7 @@ describe('AllExceptionsFilter', () => {
     const status = vi.fn(() => ({ json }));
     const host = createHost({ status });
 
-    filter.catch(
-      new BadRequestException('displayName is required'),
-      host,
-    );
+    filter.catch(new BadRequestException('displayName is required'), host);
 
     expect(status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     expect(json).toHaveBeenCalledWith({

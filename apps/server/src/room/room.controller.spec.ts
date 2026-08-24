@@ -61,9 +61,7 @@ describe('RoomController — createRoom handSize validation', () => {
 describe('RoomController — createRoom reconnectGraceMs validation', () => {
   it('accepts a room created with no reconnectGraceMs override (defaults apply)', () => {
     const { controller } = setup();
-    expect(() =>
-      controller.createRoom({ displayName: 'Alice' }),
-    ).not.toThrow();
+    expect(() => controller.createRoom({ displayName: 'Alice' })).not.toThrow();
   });
 
   it('accepts reconnectGraceMs values within the safe range', () => {
