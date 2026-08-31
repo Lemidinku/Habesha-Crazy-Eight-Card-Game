@@ -1,0 +1,144 @@
+{
+  "common": {
+    "appTitle": "Crazy Eights",
+    "dismiss": "dismiss",
+    "cancel": "Cancel",
+    "roomCode": "Room code",
+    "connectionStatus": {
+      "connected": "connected",
+      "disconnected": "disconnected"
+    },
+    "scoreLine_one": "{{score}} pts · {{count}} win",
+    "scoreLine_other": "{{score}} pts · {{count}} wins",
+    "suits": {
+      "hearts": "hearts",
+      "diamonds": "diamonds",
+      "clubs": "clubs",
+      "spades": "spades"
+    }
+  },
+  "home": {
+    "titlePlain": "Crazy",
+    "titleAccent": "Eights",
+    "tagline": "Eights and Jacks are wild. Watch for the glow.",
+    "namePlaceholder": "Your name",
+    "createRoom": "Create Room",
+    "orJoinWithCode": "or join with a code",
+    "join": "Join",
+    "wakingUp": "Waking up the server — this can take up to a minute on first load.",
+    "enterNamePrompt": "Enter your name above to create or join a room."
+  },
+  "joinByUrl": {
+    "invitedTo": "You've been invited to",
+    "joinGame": "Join Game"
+  },
+  "lobby": {
+    "copyLink": "Copy invite link to share with friends",
+    "copyLinkCopied": "Copied!",
+    "copyLinkFailed": "Couldn't copy — select the code above",
+    "host": "HOST",
+    "waitingForPlayers": "Waiting for more players…",
+    "startMatch": "Start Match",
+    "waitingForHost": "Waiting for the host to start the match…",
+    "leaveRoom": "Leave Room"
+  },
+  "gameTable": {
+    "leaveGame": "Leave Game",
+    "leaveGameConfirm": "Leave the game? This ends the match for everyone.",
+    "cardsUnitLabel": "cards",
+    "drawPile": "Draw pile",
+    "draw": "Draw",
+    "discard": "Discard",
+    "activeSuit": "Active suit",
+    "direction": "Direction",
+    "pendingStack_one": "Pending draw-stack: {{count}} card on top of",
+    "pendingStack_other": "Pending draw-stack: {{count}} cards on top of",
+    "yourTurn": "Your Turn",
+    "playersTurn": "{{name}}'s turn",
+    "unknownPlayer": "…"
+  },
+  "playerHand": {
+    "playSelected": "Play Selected",
+    "skip": "Skip",
+    "orClickDrawPile": "or click the draw pile above",
+    "stackHint": "Click a highlighted card to extend the stack, or absorb it.",
+    "drawAbsorb": "Draw {{count}}"
+  },
+  "suitPicker": {
+    "chooseSuit": "Choose the next suit"
+  },
+  "roundEndOverlay": {
+    "title": "Round over",
+    "wonRound": "{{name}} won the round",
+    "scoreLine_one": "+{{gained}} (total {{total}}, {{count}} win)",
+    "scoreLine_other": "+{{gained}} (total {{total}}, {{count}} wins)",
+    "continue": "Continue",
+    "endGame": "End Game",
+    "waitingForHost": "Waiting for the host to continue…"
+  },
+  "matchEndOverlay": {
+    "titleEnded": "Game ended",
+    "titleOver": "Match over!",
+    "leftGame": "{{name}} left the game",
+    "wins": "{{name}} wins",
+    "backToHome": "Back to Home"
+  },
+  "activityFeed": {
+    "heading": "Activity",
+    "empty": "Nothing has happened yet.",
+    "someone": "Someone",
+    "cardsPlayed": "{{name}} played {{cards}}",
+    "suitDeclared": "{{name}} declared the suit: {{suit}}",
+    "stackExtended": "{{name}} stacked with {{card}} (now draw {{count}})",
+    "stackAbsorbed_one": "{{name}} drew {{count}} card from the stack",
+    "stackAbsorbed_other": "{{name}} drew {{count}} cards from the stack",
+    "cardDrawn": "{{name}} drew a card",
+    "playerSkipped": "{{name}} was skipped",
+    "directionReversed": "Direction reversed",
+    "discardReshuffled": "Discard pile reshuffled into a new draw pile ({{count}} cards)",
+    "freshDeckAdded": "Draw pile and discard pile both ran out — a fresh deck ({{count}} cards) was shuffled in",
+    "roundEnded": "{{name}} won the round",
+    "nextRoundStarted": "Next round started",
+    "matchEnded": "{{name}} wins the match!",
+    "matchAbandoned": "{{name}} left the game — {{winner}} wins"
+  },
+  "languageSwitcher": {
+    "label": "Language"
+  },
+  "errors": {
+    "ROOM_NOT_FOUND": "That room doesn't exist.",
+    "ROOM_ALREADY_STARTED": "That room has already started its match.",
+    "ROOM_FULL": "That room is full.",
+    "NAME_TAKEN": "Someone in that room is already using that name.",
+    "MATCH_ALREADY_STARTED": "The match has already started.",
+    "NOT_HOST": "Only the host can do that.",
+    "ALREADY_STARTED": "The match has already started.",
+    "NOT_ENOUGH_PLAYERS": "You need at least 2 players to start.",
+    "ROOM_OR_MATCH_NOT_FOUND": "That room or match doesn't exist.",
+    "INVALID_SESSION": "Your session is no longer valid — please rejoin.",
+    "NOT_JOINED": "Join the room before doing that.",
+    "DISPLAY_NAME_REQUIRED": "Enter a name first.",
+    "DISPLAY_NAME_TOO_LONG": "Name must be 32 characters or fewer.",
+    "HAND_SIZE_OUT_OF_RANGE": "Hand size must be between 1 and 10.",
+    "RECONNECT_GRACE_OUT_OF_RANGE": "Reconnect grace period must be between 5 seconds and 10 minutes.",
+    "INTERNAL_SERVER_ERROR": "Something went wrong on our end — please try again.",
+    "NO_CARDS": "Select at least one card.",
+    "DUPLICATE_CARD": "You selected the same card twice.",
+    "CARD_NOT_IN_HAND": "That card isn't in your hand.",
+    "MATCH_ENDED": "This match has already ended.",
+    "NOT_SEATED": "You're not part of this match.",
+    "NOT_YOUR_TURN": "It's not your turn.",
+    "UNKNOWN_COMMAND": "That action isn't recognized.",
+    "WRONG_PHASE": "You can't do that right now.",
+    "CANNOT_EXTEND_STACK": "That card can't extend the pending draw-stack.",
+    "TOO_MANY_CARDS": "Only a 7 may be played together with other cards.",
+    "ILLEGAL_PLAY": "That card doesn't match the current suit or rank.",
+    "SUIT_REQUIRED": "Playing an 8 or J requires choosing the next suit.",
+    "INVALID_SEVEN_PLAY": "A seven-play must lead with a 7.",
+    "SEVEN_DOES_NOT_MATCH": "That 7 doesn't match the current suit or rank.",
+    "SEVEN_RANK_MATCH_CANNOT_DUMP": "You matched by rank, not suit — you can't dump extra cards with this 7.",
+    "DUMP_SUIT_MISMATCH": "Every card dumped with a 7 must share its suit.",
+    "REQUEST_FAILED": "That request failed — please try again.",
+    "UNKNOWN": "Something went wrong."
+  }
+}
