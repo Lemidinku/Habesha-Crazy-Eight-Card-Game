@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { returnToHome } from '../hooks/useRoomConnection';
 import { leaveRoomSocket, startMatchSocket } from '../lib/socket';
 import { useRoomStore } from '../store/roomStore';
@@ -44,6 +45,7 @@ function CheckIcon() {
 }
 
 export function LobbyScreen() {
+  const { t } = useTranslation();
   const room = useRoomStore((s) => s.room);
   const session = useRoomStore((s) => s.session);
   const [copyState, setCopyState] = useState<CopyState>('idle');
@@ -75,7 +77,7 @@ export function LobbyScreen() {
   return (
     <div className="w-full max-w-md space-y-5">
       <div className="rounded-xl bg-felt-raised border border-gold/25 py-5 text-center space-y-2">
-        <p className="text-xs uppercase tracking-widest text-card/45">Room code</p>
+        <p className="text-xs uppercase tracking-widest text-card/45">{t('common.roomCode')}</p>
         <p className="font-display text-4xl font-bold tracking-[0.3em] text-gold">{room.code}</p>
         <button
           type="button"
@@ -91,10 +93,10 @@ export function LobbyScreen() {
           {copyState === 'copied' ? <CheckIcon /> : <LinkIcon />}
           <span aria-live="polite">
             {copyState === 'copied'
-              ? 'Copied!'
+              ? t('lobby.copyLinkCopied')
               : copyState === 'failed'
-                ? "Couldn't copy — select the code above"
-                : 'Copy invite link to share with friends'}
+                ? t('lobby.copyLinkFailed')
+                : t('lobby.copyLink')}
           </span>
         </button>
       </div>
@@ -106,13 +108,13 @@ export function LobbyScreen() {
           >
             <span className="text-card">
               {p.displayName}
-              {p.playerId === room.hostPlayerId && <span className="text-gold text-xs ml-1.5">HOST</span>}
+              {p.playerId === room.hostPlayerId && <span className="text-gold text-xs ml-1.5">{t('lobby.host')}</span>}
             </span>
             <span
               className={`text-xs flex items-center gap-1.5 ${p.connectionStatus === 'connected' ? 'text-jade' : 'text-card/35'}`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${p.connectionStatus === 'connected' ? 'bg-jade' : 'bg-card/35'}`} />
-              {p.connectionStatus}
+              {t(`common.connectionStatus.${p.connectionStatus}`)}
             </span>
           </li>
         ))}
@@ -124,17 +126,17 @@ export function LobbyScreen() {
           disabled={room.players.length < 2}
           onClick={() => startMatchSocket()}
         >
-          {room.players.length < 2 ? 'Waiting for more players…' : 'Start Match'}
+          {room.players.length < 2 ? t('lobby.waitingForPlayers') : t('lobby.startMatch')}
         </button>
       ) : (
-        <p className="text-center text-card/50 text-sm">Waiting for the host to start the match…</p>
+        <p className="text-center text-card/50 text-sm">{t('lobby.waitingForHost')}</p>
       )}
       <button
         type="button"
         className="w-full text-center text-sm text-card/40 hover:text-crimson underline"
         onClick={handleLeave}
       >
-        Leave Room
+        {t('lobby.leaveRoom')}
       </button>
     </div>
   );
