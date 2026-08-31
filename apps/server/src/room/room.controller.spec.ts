@@ -155,8 +155,8 @@ describe('RoomController — displayName required', () => {
   it('rejects an empty displayName on joinRoom with the DISPLAY_NAME_REQUIRED code', () => {
     const { controller } = setup();
     controller.createRoom({ displayName: 'Alice' });
-    expect(() =>
-      controller.joinRoom('AAAAAA', { displayName: '' }),
-    ).toThrow('DISPLAY_NAME_REQUIRED');
+    expect(() => controller.joinRoom('AAAAAA', { displayName: '' })).toThrow(
+      'DISPLAY_NAME_REQUIRED',
+    );
   });
 });
