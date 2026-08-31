@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SUIT_SYMBOLS, isRedSuit, suitTextClass, wildRingClass } from '../lib/cardDisplay';
+import { SUIT_SYMBOLS, formatCard, isRedSuit, suitTextClass, wildRingClass } from '../lib/cardDisplay';
 import { sendCommand } from '../lib/socket';
 import { useRoomStore } from '../store/roomStore';
 import { ActivityFeed } from './ActivityFeed';
@@ -118,10 +118,15 @@ export function GameTable() {
       </div>
 
       {round.pendingStack && (
-        <div className="text-center text-gold text-sm flex items-center justify-center gap-1.5">
-          Pending draw-stack: {round.pendingStack.accumulated} cards on top of{' '}
-          <span className={suitTextClass(round.pendingStack.topCard.suit)}>
-            <CardFace card={round.pendingStack.topCard} />
+        <div className="text-center text-gold text-sm">
+          Pending draw-stack: {round.pendingStack.accumulated} card
+          {round.pendingStack.accumulated === 1 ? '' : 's'} on top of{' '}
+          <span
+            className={`font-display font-semibold ${
+              isRedSuit(round.pendingStack.topCard.suit) ? 'text-crimson' : 'text-card'
+            }`}
+          >
+            {formatCard(round.pendingStack.topCard)}
           </span>
         </div>
       )}
