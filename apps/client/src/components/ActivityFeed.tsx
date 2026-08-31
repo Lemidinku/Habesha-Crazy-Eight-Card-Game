@@ -1,46 +1,65 @@
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { formatCard } from '../lib/cardDisplay';
 import type { RedactedRoomSync } from '../lib/wireTypes';
 import type { WireEvent } from '../lib/wireTypes';
 import { useRoomStore } from '../store/roomStore';
 
-function playerName(room: RedactedRoomSync, playerId: string): string {
-  return room.players.find((p) => p.playerId === playerId)?.displayName ?? 'Someone';
+function playerName(room: RedactedRoomSync, playerId: string, t: TFunction): string {
+  return room.players.find((p) => p.playerId === playerId)?.displayName ?? t('activityFeed.someone');
 }
 
-function describeEvent(event: WireEvent, room: RedactedRoomSync): string {
+function describeEvent(event: WireEvent, room: RedactedRoomSync, t: TFunction): string {
   switch (event.type) {
     case 'CARDS_PLAYED':
-      return `${playerName(room, event.playerId)} played ${event.cards.map(formatCard).join(', ')}`;
+      return t('activityFeed.cardsPlayed', {
+        name: playerName(room, event.playerId, t),
+        cards: event.cards.map(formatCard).join(', '),
+      });
     case 'SUIT_DECLARED':
-      return `${playerName(room, event.playerId)} declared the suit: ${event.suit}`;
+      return t('activityFeed.suitDeclared', {
+        name: playerName(room, event.playerId, t),
+        suit: t(`common.suits.${event.suit}`),
+      });
     case 'STACK_EXTENDED':
-      return `${playerName(room, event.playerId)} stacked with ${formatCard(event.card)} (now draw ${event.newAccumulated})`;
+      return t('activityFeed.stackExtended', {
+        name: playerName(room, event.playerId, t),
+        card: formatCard(event.card),
+        count: event.newAccumulated,
+      });
     case 'STACK_ABSORBED':
-      return `${playerName(room, event.playerId)} drew ${event.drawnCount} card${event.drawnCount === 1 ? '' : 's'} from the stack`;
+      return t('activityFeed.stackAbsorbed', {
+        name: playerName(room, event.playerId, t),
+        count: event.drawnCount,
+      });
     case 'CARD_DRAWN':
-      return `${playerName(room, event.playerId)} drew a card`;
+      return t('activityFeed.cardDrawn', { name: playerName(room, event.playerId, t) });
     case 'PLAYER_SKIPPED':
-      return `${playerName(room, event.playerId)} was skipped`;
+      return t('activityFeed.playerSkipped', { name: playerName(room, event.playerId, t) });
     case 'DIRECTION_REVERSED':
-      return 'Direction reversed';
+      return t('activityFeed.directionReversed');
     case 'DISCARD_RESHUFFLED_INTO_DRAW_PILE':
-      return `Discard pile reshuffled into a new draw pile (${event.cardCount} cards)`;
+      return t('activityFeed.discardReshuffled', { count: event.cardCount });
     case 'FRESH_DECK_ADDED_TO_DRAW_PILE':
-      return `Draw pile and discard pile both ran out — a fresh deck (${event.cardCount} cards) was shuffled in`;
+      return t('activityFeed.freshDeckAdded', { count: event.cardCount });
     case 'ROUND_ENDED':
-      return `${playerName(room, event.winnerPlayerId)} won the round`;
+      return t('activityFeed.roundEnded', { name: playerName(room, event.winnerPlayerId, t) });
     case 'NEXT_ROUND_STARTED':
-      return 'Next round started';
+      return t('activityFeed.nextRoundStarted');
     case 'MATCH_ENDED':
-      return `${playerName(room, event.winnerPlayerId)} wins the match!`;
+      return t('activityFeed.matchEnded', { name: playerName(room, event.winnerPlayerId, t) });
     case 'MATCH_ABANDONED':
-      return `${playerName(room, event.playerId)} left the game — ${playerName(room, event.winnerPlayerId)} wins`;
+      return t('activityFeed.matchAbandoned', {
+        name: playerName(room, event.playerId, t),
+        winner: playerName(room, event.winnerPlayerId, t),
+      });
   }
 }
 
 const VISIBLE_EVENT_COUNT = 5;
 
 export function ActivityFeed() {
+  const { t } = useTranslation();
   const room = useRoomStore((s) => s.room);
   const events = useRoomStore((s) => s.events);
   if (!room) return null;
@@ -52,11 +71,11 @@ export function ActivityFeed() {
 
   return (
     <div className="w-full max-w-3xl">
-      <div className="text-xs uppercase tracking-wide text-card/35 mb-1.5">Activity</div>
+      <div className="text-xs uppercase tracking-wide text-card/35 mb-1.5">{t('activityFeed.heading')}</div>
       <ul className="space-y-1 text-sm text-card/70 bg-felt-raised/60 rounded-lg p-3">
-        {visibleEvents.length === 0 && <li className="text-card/35">Nothing has happened yet.</li>}
+        {visibleEvents.length === 0 && <li className="text-card/35">{t('activityFeed.empty')}</li>}
         {visibleEvents.map((event, i) => (
-          <li key={i}>{describeEvent(event, room)}</li>
+          <li key={i}>{describeEvent(event, room, t)}</li>
         ))}
       </ul>
     </div>
