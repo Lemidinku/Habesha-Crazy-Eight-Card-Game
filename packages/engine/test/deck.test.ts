@@ -74,5 +74,6 @@ describe("dealNewRound", () => {
     expect(round.direction).toBe(1);
     expect(round.currentPlayerIndex).toBe(0);
     expect(round.pendingStack).toBeUndefined();
+    expect(round.decksInPlay).toBe(1);
   });
 });

@@ -25,6 +25,8 @@ function describeEvent(event: WireEvent, room: RedactedRoomSync): string {
       return 'Direction reversed';
     case 'DISCARD_RESHUFFLED_INTO_DRAW_PILE':
       return `Discard pile reshuffled into a new draw pile (${event.cardCount} cards)`;
+    case 'FRESH_DECK_ADDED_TO_DRAW_PILE':
+      return `Draw pile and discard pile both ran out — a fresh deck (${event.cardCount} cards) was shuffled in`;
     case 'ROUND_ENDED':
       return `${playerName(room, event.winnerPlayerId)} won the round`;
     case 'NEXT_ROUND_STARTED':

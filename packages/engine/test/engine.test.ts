@@ -18,6 +18,7 @@ function makeMatch(
     phase: "AWAITING_PLAY",
     drawPile: [],
     discardPile: [card("K", "hearts")],
+    decksInPlay: 1,
     currentSuit: "hearts",
     currentRank: "K",
     direction: 1,
@@ -357,6 +358,30 @@ describe("applyMove — draw-stack chaining end to end", () => {
     // R-14: absorbing does NOT end the turn -- it's still carol's turn afterward.
     expect(absorbed.state.round.currentPlayerIndex).toBe(2);
     expect(absorbed.events).toContainEqual({ type: "STACK_ABSORBED", playerId: "carol", drawnCount: 7 });
+  });
+
+  it("R-23 (overridden): absorbing keeps drawing from a fresh deck instead of stopping early", () => {
+    const state = makeMatch(
+      [{ playerId: "alice", hand: [], matchScore: 0 }],
+      {
+        phase: "AWAITING_STACK_RESPONSE",
+        pendingStack: { topCard: card("2", "spades"), accumulated: 5 },
+        drawPile: [card("3", "clubs")],
+        discardPile: [card("K", "hearts")], // only the top card -- nothing reshuffleable
+        decksInPlay: 1,
+      },
+    );
+
+    const absorbed = applyMove(state, { type: "RESOLVE_STACK", playerId: "alice" });
+    expect(absorbed.ok).toBe(true);
+    if (!absorbed.ok) return;
+    // 1 card from the original draw pile + 4 more from the fresh deck shuffled in partway through.
+    expect(absorbed.state.players[0]!.hand).toHaveLength(5);
+    expect(absorbed.events).toContainEqual({ type: "STACK_ABSORBED", playerId: "alice", drawnCount: 5 });
+    expect(absorbed.events).toContainEqual({ type: "FRESH_DECK_ADDED_TO_DRAW_PILE", cardCount: 52 });
+    expect(absorbed.state.round.decksInPlay).toBe(2);
+    expect(absorbed.state.round.drawPile).toHaveLength(52 - 4); // 4 of the 5 draws came from the fresh deck
+    expect(absorbed.state.round.discardPile).toEqual([card("K", "hearts")]);
   });
 
   it("R-14: after absorbing, the same player keeps their turn and can play normally", () => {
@@ -790,7 +815,7 @@ describe("applyMove — draw, then choose to play or skip", () => {
     expect(played.state.players[0]!.hand).toEqual([card("3", "clubs")]);
   });
 
-  it("R-23: still lets the player choose play-or-skip when there is nothing left to draw", () => {
+  it("R-23 (overridden): draws from a freshly shuffled deck instead of passing when nothing is left", () => {
     const state = makeMatch(
       [
         { playerId: "alice", hand: [card("3", "clubs")], matchScore: 0 },
@@ -801,9 +826,13 @@ describe("applyMove — draw, then choose to play or skip", () => {
     const result = applyMove(state, { type: "DRAW_CARD", playerId: "alice" });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.state.players[0]!.hand).toEqual([card("3", "clubs")]);
+    expect(result.state.players[0]!.hand).toHaveLength(2); // original 3-clubs + 1 freshly drawn
+    expect(result.state.round.drawPile).toHaveLength(51); // 52 fresh minus the one just drawn
+    expect(result.state.round.discardPile).toEqual([card("K", "hearts")]);
+    expect(result.state.round.decksInPlay).toBe(2);
     expect(result.state.round.currentPlayerIndex).toBe(0);
     expect(result.state.round.hasDrawnThisTurn).toBe(true);
-    expect(result.events).toEqual([]);
+    expect(result.events).toContainEqual({ type: "FRESH_DECK_ADDED_TO_DRAW_PILE", cardCount: 52 });
+    expect(result.events.some((e) => e.type === "CARD_DRAWN")).toBe(true);
   });
 });

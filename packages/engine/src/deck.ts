@@ -8,7 +8,7 @@ export function deckCountForPlayers(playerCount: number): 1 | 2 {
   return playerCount <= 4 ? 1 : 2;
 }
 
-function buildSingleDeck(deckIndex: number): Card[] {
+export function buildSingleDeck(deckIndex: number): Card[] {
   const cards: Card[] = [];
   for (const suit of SUITS) {
     for (const rank of RANKS) {
@@ -84,6 +84,7 @@ export function dealNewRound(
     phase: "AWAITING_PLAY",
     drawPile: remainingDeck,
     discardPile: [openingCard],
+    decksInPlay: deckCountForPlayers(playerCount),
     currentSuit: openingCard.suit,
     currentRank: openingCard.rank,
     direction: 1,

@@ -31,6 +31,12 @@ export interface RoundState {
   phase: RoundPhase;
   drawPile: Card[];
   discardPile: Card[];
+  /** How many decks' worth of cards exist in this round's card-id namespace: the initial deal
+   * (1 for ≤4 players, 2 for 5-8, per `deckCountForPlayers`) plus one more for every fresh deck
+   * auto-added by drawPile.ts's R-23 override. Each deck's cards use id "{rank}-{suit}-{deckIndex}"
+   * (see deck.ts) with deckIndex 0..decksInPlay-1, so a newly added deck always uses `decksInPlay`
+   * itself as its index -- guaranteeing no collision with ids already dealt out. */
+  decksInPlay: number;
   /** The suit/rank a played card must match (R-4). Not derived from discardPile's last
    * element, because R-18 requires the 7 itself (not the last dumped card) to be the
    * reference after a seven-dump. */
@@ -94,6 +100,7 @@ export type DomainEvent =
   | { type: "PLAYER_SKIPPED"; playerId: string }
   | { type: "DIRECTION_REVERSED" }
   | { type: "DISCARD_RESHUFFLED_INTO_DRAW_PILE"; cardCount: number }
+  | { type: "FRESH_DECK_ADDED_TO_DRAW_PILE"; cardCount: number }
   | { type: "ROUND_ENDED"; winnerPlayerId: string; scores: Record<string, number> }
   | { type: "NEXT_ROUND_STARTED" }
   | { type: "MATCH_ENDED"; winnerPlayerId: string; finalScores: Record<string, number> }

@@ -272,26 +272,32 @@ function handleDrawCard(
     return { ok: true, state: { ...state, round }, events };
   }
 
-  const drawResult = drawOneCard(state.round.drawPile, state.round.discardPile, rng);
+  const drawResult = drawOneCard(state.round.drawPile, state.round.discardPile, state.round.decksInPlay, rng);
 
-  let updatedPlayers = state.players;
-  let round: RoundState = { ...state.round, hasDrawnThisTurn: true };
-
-  if (drawResult) {
-    if (drawResult.reshuffled) {
-      events.push({
-        type: "DISCARD_RESHUFFLED_INTO_DRAW_PILE",
-        cardCount: drawResult.drawPile.length + 1,
-      });
-    }
-    events.push({ type: "CARD_DRAWN", playerId: player.playerId, card: drawResult.card });
-    updatedPlayers = state.players.map((p, i) =>
-      i === playerIndex ? { ...p, hand: [...p.hand, drawResult.card] } : p,
-    );
-    round = { ...round, drawPile: drawResult.drawPile, discardPile: drawResult.discardPile };
+  if (drawResult.reshuffled) {
+    events.push({
+      type: "DISCARD_RESHUFFLED_INTO_DRAW_PILE",
+      cardCount: drawResult.drawPile.length + 1,
+    });
   }
-  // R-23: if drawResult is null there's nothing left to draw -- but the player can still
-  // choose to play a card they already hold, or skip via a follow-up DRAW_CARD.
+  if (drawResult.freshDeckAdded) {
+    events.push({
+      type: "FRESH_DECK_ADDED_TO_DRAW_PILE",
+      cardCount: drawResult.drawPile.length + 1,
+    });
+  }
+  events.push({ type: "CARD_DRAWN", playerId: player.playerId, card: drawResult.card });
+
+  const updatedPlayers = state.players.map((p, i) =>
+    i === playerIndex ? { ...p, hand: [...p.hand, drawResult.card] } : p,
+  );
+  const round: RoundState = {
+    ...state.round,
+    hasDrawnThisTurn: true,
+    drawPile: drawResult.drawPile,
+    discardPile: drawResult.discardPile,
+    decksInPlay: drawResult.decksInPlay,
+  };
 
   return { ok: true, state: { ...state, players: updatedPlayers, round }, events };
 }
@@ -356,22 +362,30 @@ function handleResolveStack(
     return { ok: true, state: { ...state, players: updatedPlayers, round }, events };
   }
 
-  // R-14: absorb -- draw the full accumulated count, possibly spanning multiple reshuffles.
+  // R-14: absorb -- draw the full accumulated count, possibly spanning multiple reshuffles
+  // and/or fresh decks (R-23, overridden) -- this loop always completes now.
   let drawPile = state.round.drawPile;
   let discardPile = state.round.discardPile;
+  let decksInPlay = state.round.decksInPlay;
   const drawnCards: Card[] = [];
   for (let i = 0; i < pendingStack.accumulated; i++) {
-    const drawResult = drawOneCard(drawPile, discardPile, rng);
-    if (!drawResult) break; // R-23: nothing left to draw.
+    const drawResult = drawOneCard(drawPile, discardPile, decksInPlay, rng);
     if (drawResult.reshuffled) {
       events.push({
         type: "DISCARD_RESHUFFLED_INTO_DRAW_PILE",
         cardCount: drawResult.drawPile.length + 1,
       });
     }
+    if (drawResult.freshDeckAdded) {
+      events.push({
+        type: "FRESH_DECK_ADDED_TO_DRAW_PILE",
+        cardCount: drawResult.drawPile.length + 1,
+      });
+    }
     drawnCards.push(drawResult.card);
     drawPile = drawResult.drawPile;
     discardPile = drawResult.discardPile;
+    decksInPlay = drawResult.decksInPlay;
   }
 
   events.push({ type: "STACK_ABSORBED", playerId: player.playerId, drawnCount: drawnCards.length });
@@ -388,6 +402,7 @@ function handleResolveStack(
     ...state.round,
     drawPile,
     discardPile,
+    decksInPlay,
     phase: "AWAITING_PLAY",
     pendingStack: undefined,
     hasDrawnThisTurn: undefined,
