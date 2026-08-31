@@ -9,7 +9,7 @@ export interface SupportedLanguage {
 export const SUPPORTED_LANGUAGES: SupportedLanguage[] = [
   { code: 'en', label: 'English' },
   { code: 'am', label: 'አማርኛ' },
-  { code: 'or', label: 'Oromoo' },
+  { code: 'om', label: 'Oromoo' },
 ];
 
 export const DEFAULT_LANGUAGE = 'en';
