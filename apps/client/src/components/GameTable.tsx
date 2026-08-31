@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SUIT_SYMBOLS, formatCard, isRedSuit, suitTextClass, wildRingClass } from '../lib/cardDisplay';
 import { sendCommand } from '../lib/socket';
 import { useRoomStore } from '../store/roomStore';
@@ -9,6 +10,7 @@ import { PlayerHand } from './PlayerHand';
 import { RoundEndOverlay } from './RoundEndOverlay';
 
 export function GameTable() {
+  const { t } = useTranslation();
   const room = useRoomStore((s) => s.room);
   const session = useRoomStore((s) => s.session);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -23,7 +25,7 @@ export function GameTable() {
   const canDraw = isMyTurn && round.phase === 'AWAITING_PLAY' && !round.hasDrawnThisTurn;
 
   function handleAbandon() {
-    if (!window.confirm('Leave the game? This ends the match for everyone.')) return;
+    if (!window.confirm(t('gameTable.leaveGameConfirm'))) return;
     sendCommand({ type: 'ABANDON_MATCH', playerId: session!.playerId });
   }
 
@@ -44,7 +46,7 @@ export function GameTable() {
           onClick={handleAbandon}
           className="text-xs text-card/40 hover:text-crimson underline"
         >
-          Leave Game
+          {t('gameTable.leaveGame')}
         </button>
       </div>
 
@@ -61,19 +63,19 @@ export function GameTable() {
           >
             <div className="font-medium text-card">{p.displayName}</div>
             <div className="font-display text-2xl font-bold leading-tight text-card">
-              {p.handCount} <span className="text-xs font-body font-normal text-card/50">cards</span>
+              {p.handCount} <span className="text-xs font-body font-normal text-card/50">{t('gameTable.cardsUnitLabel')}</span>
             </div>
             <div className="text-xs text-card/45">
-              {p.matchScore} pts &middot; {p.roundsWon} win{p.roundsWon === 1 ? '' : 's'}
+              {t('common.scoreLine', { count: p.roundsWon, score: p.matchScore })}
             </div>
-            {p.connectionStatus === 'disconnected' && <div className="text-gold">disconnected</div>}
+            {p.connectionStatus === 'disconnected' && <div className="text-gold">{t('common.connectionStatus.disconnected')}</div>}
           </div>
         ))}
       </div>
 
       <div className="rounded-xl bg-felt-raised border border-card/10 py-5 flex justify-center items-center gap-6">
         <div className="text-center">
-          <div className="text-xs uppercase tracking-wide text-card/40 mb-1.5">Draw pile</div>
+          <div className="text-xs uppercase tracking-wide text-card/40 mb-1.5">{t('gameTable.drawPile')}</div>
           <button
             type="button"
             onClick={handleDrawPileClick}
@@ -85,11 +87,11 @@ export function GameTable() {
             ].join(' ')}
           >
             <span className="text-card">{round.drawPileCount}</span>
-            {canDraw && <span className="text-[10px] font-body font-normal text-gold">Draw</span>}
+            {canDraw && <span className="text-[10px] font-body font-normal text-gold">{t('gameTable.draw')}</span>}
           </button>
         </div>
         <div className="text-center">
-          <div className="text-xs uppercase tracking-wide text-card/40 mb-1.5">Discard</div>
+          <div className="text-xs uppercase tracking-wide text-card/40 mb-1.5">{t('gameTable.discard')}</div>
           <div
             className={[
               'w-16 h-24 rounded-lg bg-card flex items-center justify-center',
@@ -106,21 +108,20 @@ export function GameTable() {
           </div>
         </div>
         <div className="text-center">
-          <div className="text-xs uppercase tracking-wide text-card/40 mb-1.5">Active suit</div>
+          <div className="text-xs uppercase tracking-wide text-card/40 mb-1.5">{t('gameTable.activeSuit')}</div>
           <div className={`text-3xl ${isRedSuit(round.currentSuit) ? 'text-crimson' : 'text-card'}`}>
             {SUIT_SYMBOLS[round.currentSuit]}
           </div>
         </div>
         <div className="text-center">
-          <div className="text-xs uppercase tracking-wide text-card/40 mb-1.5">Direction</div>
+          <div className="text-xs uppercase tracking-wide text-card/40 mb-1.5">{t('gameTable.direction')}</div>
           <div className="text-3xl text-card">{round.direction === 1 ? '⟳' : '⟲'}</div>
         </div>
       </div>
 
       {round.pendingStack && (
         <div className="text-center text-gold text-sm">
-          Pending draw-stack: {round.pendingStack.accumulated} card
-          {round.pendingStack.accumulated === 1 ? '' : 's'} on top of{' '}
+          {t('gameTable.pendingStack', { count: round.pendingStack.accumulated })}{' '}
           <span
             className={`font-display font-semibold ${
               isRedSuit(round.pendingStack.topCard.suit) ? 'text-crimson' : 'text-card'
@@ -139,7 +140,9 @@ export function GameTable() {
             : 'text-card/45 font-body font-medium',
         ].join(' ')}
       >
-        {isMyTurn ? 'Your Turn' : `${currentPlayer?.displayName ?? '…'}'s turn`}
+        {isMyTurn
+          ? t('gameTable.yourTurn')
+          : t('gameTable.playersTurn', { name: currentPlayer?.displayName ?? t('gameTable.unknownPlayer') })}
       </div>
 
       <PlayerHand selectedIds={selectedIds} setSelectedIds={setSelectedIds} />

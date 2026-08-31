@@ -1,4 +1,5 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useTranslation } from 'react-i18next';
 import { extendsStack, isLegalPlay, isWild, type Card, type Suit } from '@crazy8/engine';
 import { orderCardIdsForPlay } from '../lib/cardOrdering';
 import { suitTextClass, wildRingClass } from '../lib/cardDisplay';
@@ -24,6 +25,7 @@ interface PlayerHandProps {
 }
 
 export function PlayerHand({ selectedIds, setSelectedIds }: PlayerHandProps) {
+  const { t } = useTranslation();
   const room = useRoomStore((s) => s.room);
   const session = useRoomStore((s) => s.session);
   const [pendingWildCardIds, setPendingWildCardIds] = useState<string[] | null>(null);
@@ -110,7 +112,7 @@ export function PlayerHand({ selectedIds, setSelectedIds }: PlayerHandProps) {
             disabled={selectedIds.length === 0}
             onClick={handlePlaySelected}
           >
-            Play Selected
+            {t('playerHand.playSelected')}
           </button>
           {round.hasDrawnThisTurn ? (
             <button
@@ -118,23 +120,23 @@ export function PlayerHand({ selectedIds, setSelectedIds }: PlayerHandProps) {
               className="rounded-lg bg-felt-raised border border-card/15 px-4 py-2 font-medium text-card hover:border-card/30"
               onClick={handleSkip}
             >
-              Skip
+              {t('playerHand.skip')}
             </button>
           ) : (
-            <p className="text-xs text-card/45 self-center">or click the draw pile above</p>
+            <p className="text-xs text-card/45 self-center">{t('playerHand.orClickDrawPile')}</p>
           )}
         </div>
       )}
 
       {isMyTurn && round.phase === 'AWAITING_STACK_RESPONSE' && (
         <div className="text-center space-y-2">
-          <p className="text-gold text-sm">Click a highlighted card to extend the stack, or absorb it.</p>
+          <p className="text-gold text-sm">{t('playerHand.stackHint')}</p>
           <button
             type="button"
             className="rounded-lg bg-felt-raised border border-card/15 px-4 py-2 font-medium text-card hover:border-card/30"
             onClick={handleAbsorbStack}
           >
-            Draw {round.pendingStack?.accumulated}
+            {t('playerHand.drawAbsorb', { count: round.pendingStack?.accumulated ?? 0 })}
           </button>
         </div>
       )}
