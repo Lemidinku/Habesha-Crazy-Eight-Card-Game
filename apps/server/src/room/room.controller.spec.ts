@@ -56,6 +56,13 @@ describe('RoomController — createRoom handSize validation', () => {
       controller.createRoom({ displayName: 'Alice', handSize: 4.5 }),
     ).toThrow(BadRequestException);
   });
+
+  it('rejects an out-of-range handSize with the HAND_SIZE_OUT_OF_RANGE code', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice', handSize: 0 }),
+    ).toThrow('HAND_SIZE_OUT_OF_RANGE');
+  });
 });
 
 describe('RoomController — createRoom reconnectGraceMs validation', () => {
@@ -97,6 +104,13 @@ describe('RoomController — createRoom reconnectGraceMs validation', () => {
       controller.createRoom({ displayName: 'Alice', reconnectGraceMs: 100.5 }),
     ).toThrow(BadRequestException);
   });
+
+  it('rejects an out-of-range reconnectGraceMs with the RECONNECT_GRACE_OUT_OF_RANGE code', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice', reconnectGraceMs: 1_000 }),
+    ).toThrow('RECONNECT_GRACE_OUT_OF_RANGE');
+  });
 });
 
 describe('RoomController — displayName length cap', () => {
@@ -120,5 +134,29 @@ describe('RoomController — displayName length cap', () => {
     expect(() =>
       controller.joinRoom('AAAAAA', { displayName: 'b'.repeat(33) }),
     ).toThrow(BadRequestException);
+  });
+
+  it('rejects an over-length displayName with the DISPLAY_NAME_TOO_LONG code', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'a'.repeat(33) }),
+    ).toThrow('DISPLAY_NAME_TOO_LONG');
+  });
+});
+
+describe('RoomController — displayName required', () => {
+  it('rejects an empty displayName on createRoom with the DISPLAY_NAME_REQUIRED code', () => {
+    const { controller } = setup();
+    expect(() => controller.createRoom({ displayName: '' })).toThrow(
+      'DISPLAY_NAME_REQUIRED',
+    );
+  });
+
+  it('rejects an empty displayName on joinRoom with the DISPLAY_NAME_REQUIRED code', () => {
+    const { controller } = setup();
+    controller.createRoom({ displayName: 'Alice' });
+    expect(() =>
+      controller.joinRoom('AAAAAA', { displayName: '' }),
+    ).toThrow('DISPLAY_NAME_REQUIRED');
   });
 });

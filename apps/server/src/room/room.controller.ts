@@ -39,9 +39,7 @@ const MAX_DISPLAY_NAME_LENGTH = 32;
 
 function assertValidDisplayName(displayName: string): void {
   if (displayName.length > MAX_DISPLAY_NAME_LENGTH) {
-    throw new BadRequestException(
-      `displayName must be ${MAX_DISPLAY_NAME_LENGTH} characters or fewer`,
-    );
+    throw new BadRequestException('DISPLAY_NAME_TOO_LONG');
   }
 }
 
@@ -55,7 +53,7 @@ export class RoomController {
   createRoom(@Body() body: CreateRoomBody) {
     const displayName = body?.displayName?.trim();
     if (!displayName) {
-      throw new BadRequestException('displayName is required');
+      throw new BadRequestException('DISPLAY_NAME_REQUIRED');
     }
     assertValidDisplayName(displayName);
 
@@ -65,9 +63,7 @@ export class RoomController {
         body.handSize < MIN_HAND_SIZE ||
         body.handSize > MAX_HAND_SIZE
       ) {
-        throw new BadRequestException(
-          `handSize must be an integer between ${MIN_HAND_SIZE} and ${MAX_HAND_SIZE}`,
-        );
+        throw new BadRequestException('HAND_SIZE_OUT_OF_RANGE');
       }
     }
 
@@ -77,9 +73,7 @@ export class RoomController {
         body.reconnectGraceMs < MIN_RECONNECT_GRACE_MS ||
         body.reconnectGraceMs > MAX_RECONNECT_GRACE_MS
       ) {
-        throw new BadRequestException(
-          `reconnectGraceMs must be an integer between ${MIN_RECONNECT_GRACE_MS} and ${MAX_RECONNECT_GRACE_MS}`,
-        );
+        throw new BadRequestException('RECONNECT_GRACE_OUT_OF_RANGE');
       }
     }
 
@@ -100,7 +94,7 @@ export class RoomController {
   joinRoom(@Param('code') code: string, @Body() body: JoinRoomBody) {
     const displayName = body?.displayName?.trim();
     if (!displayName) {
-      throw new BadRequestException('displayName is required');
+      throw new BadRequestException('DISPLAY_NAME_REQUIRED');
     }
     assertValidDisplayName(displayName);
 

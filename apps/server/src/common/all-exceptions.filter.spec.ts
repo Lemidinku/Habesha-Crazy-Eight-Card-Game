@@ -40,7 +40,7 @@ describe('AllExceptionsFilter', () => {
     expect(status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
     expect(json).toHaveBeenCalledWith({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: 'Internal server error',
+      message: 'INTERNAL_SERVER_ERROR',
     });
   });
 });
