@@ -7,7 +7,7 @@ export function LanguageSwitcher() {
   return (
     <select
       aria-label={t('languageSwitcher.label')}
-      value={i18n.resolvedLanguage ?? i18n.language}
+      value={i18n.language}
       onChange={(e) => void i18n.changeLanguage(e.target.value)}
       className="rounded-lg bg-felt-raised border border-card/10 px-2 py-1 text-xs text-card/70 outline-none focus-visible:ring-2 focus-visible:ring-gold"
     >
