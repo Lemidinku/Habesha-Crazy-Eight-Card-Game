@@ -35,7 +35,7 @@ export function HomeScreen() {
       setRoomUrl(res.code);
       joinRoomSocket(session.roomId, session.playerId, session.sessionToken);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create room');
+      setError(err instanceof Error ? err.message : 'UNKNOWN');
     } finally {
       setBusy(false);
       setWakingUp(false);
@@ -64,7 +64,7 @@ export function HomeScreen() {
       setRoomUrl(roomCode);
       joinRoomSocket(session.roomId, session.playerId, session.sessionToken);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not join room');
+      setError(err instanceof Error ? err.message : 'UNKNOWN');
     } finally {
       setBusy(false);
       setWakingUp(false);

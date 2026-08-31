@@ -64,7 +64,7 @@ export function useRoomConnection(): void {
       onConnect: attemptRejoin,
       onSync: (room) => setRoom(room),
       onEvent: (event) => addEvent(event),
-      onError: (error) => setError(error.message),
+      onError: (error) => setError(error.code),
     });
   }, [setRoom, addEvent, setError, setSession]);
 }

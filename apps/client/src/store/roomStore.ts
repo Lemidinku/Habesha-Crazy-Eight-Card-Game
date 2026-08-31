@@ -17,6 +17,9 @@ interface RoomStoreState {
   session: SessionInfo | null;
   room: RedactedRoomSync | null;
   events: WireEvent[];
+  /** A server-supplied error *code* (see the `errors.*` translation keys and
+   * lib/errorMessages.ts), never a display message directly -- every setError call site must
+   * pass a code, translated only at render time in App.tsx. */
   error: string | null;
   setSession: (session: SessionInfo | null) => void;
   setRoom: (room: RedactedRoomSync) => void;

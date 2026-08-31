@@ -40,7 +40,7 @@ export function JoinByUrlScreen({ code }: JoinByUrlScreenProps) {
       setRoomUrl(code);
       joinRoomSocket(session.roomId, session.playerId, session.sessionToken);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not join room');
+      setError(err instanceof Error ? err.message : 'UNKNOWN');
     } finally {
       setBusy(false);
       setWakingUp(false);

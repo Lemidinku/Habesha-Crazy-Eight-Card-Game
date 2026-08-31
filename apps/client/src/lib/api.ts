@@ -21,7 +21,7 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}) as { message?: string });
-    throw new Error(payload.message ?? `Request failed: ${response.status}`);
+    throw new Error(payload.message ?? 'UNKNOWN');
   }
   return response.json() as Promise<T>;
 }
