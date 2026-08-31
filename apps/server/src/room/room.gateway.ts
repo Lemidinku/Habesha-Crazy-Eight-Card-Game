@@ -38,9 +38,10 @@ export class RoomGateway implements OnModuleInit, OnGatewayDisconnect {
   onModuleInit(): void {
     // Grace-period auto-play (FR-17) happens on a timer, outside any client request -- this is
     // how the Gateway finds out it needs to broadcast the result.
-    this.roomService.onRoomUpdated((roomId, events) =>
-      this.broadcast(roomId, events),
-    );
+    this.roomService.onRoomUpdated((roomId, events) => {
+      this.broadcast(roomId, events);
+      this.syncRoom(roomId);
+    });
   }
 
   handleDisconnect(client: Socket): void {

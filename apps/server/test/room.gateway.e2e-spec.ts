@@ -219,4 +219,69 @@ describe('RoomGateway (e2e)', () => {
 
     expect(bobError.code).toBe('NOT_YOUR_TURN');
   });
+
+  it("regression: the other player gets a fresh room:sync once auto-pilot plays a disconnected player's turn", async () => {
+    const createRes = await request(app.getHttpServer())
+      .post('/rooms')
+      .send({ displayName: 'Alice', reconnectGraceMs: 5000 })
+      .expect(201);
+    const createBody = createRes.body as {
+      roomId: string;
+      code: string;
+      playerId: string;
+      sessionToken: string;
+    };
+    const {
+      roomId,
+      code,
+      playerId: alicePlayerId,
+      sessionToken: aliceToken,
+    } = createBody;
+
+    const joinRes = await request(app.getHttpServer())
+      .post(`/rooms/${code}/join`)
+      .send({ displayName: 'Bob' })
+      .expect(201);
+    const joinBody = joinRes.body as { playerId: string; sessionToken: string };
+    const { playerId: bobPlayerId, sessionToken: bobToken } = joinBody;
+
+    const aliceSocket = connectSocket();
+    const bobSocket = connectSocket();
+    await Promise.all([
+      waitForEvent(aliceSocket, 'connect'),
+      waitForEvent(bobSocket, 'connect'),
+    ]);
+
+    aliceSocket.emit('room:join', {
+      roomId,
+      playerId: alicePlayerId,
+      sessionToken: aliceToken,
+    });
+    await waitForEvent(aliceSocket, 'room:sync');
+    bobSocket.emit('room:join', {
+      roomId,
+      playerId: bobPlayerId,
+      sessionToken: bobToken,
+    });
+    await waitForEvent(bobSocket, 'room:sync');
+
+    const bobStartSync = waitForEvent<{
+      round: { currentPlayerIndex: number };
+    }>(bobSocket, 'room:sync');
+    aliceSocket.emit('match:start');
+    const bobSyncAtStart = await bobStartSync;
+    // Seat 0 (Alice, the host) acts first.
+    expect(bobSyncAtStart.round.currentPlayerIndex).toBe(0);
+
+    // Alice (the current player) disconnects mid-turn.
+    aliceSocket.disconnect();
+
+    // Wait past the 5s reconnect grace period for auto-pilot to kick in: it forces a fallback
+    // DRAW_CARD on Alice's behalf, then a second decline-draw to actually pass the turn to Bob.
+    const bobSyncAfterAutoPilot = await waitForEvent<{
+      round: { currentPlayerIndex: number };
+    }>(bobSocket, 'room:sync');
+
+    expect(bobSyncAfterAutoPilot.round.currentPlayerIndex).toBe(1);
+  }, 10000);
 });
