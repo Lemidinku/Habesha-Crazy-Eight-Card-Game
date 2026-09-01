@@ -144,6 +144,8 @@ export function applyMove(
       return handleDrawCard(state, command, rng);
     case "RESOLVE_STACK":
       return handleResolveStack(state, command, rng);
+    case "TIMEOUT":
+      return handleTimeout(state, command, rng);
     default: {
       // TypeScript considers Command exhaustive above, so this looks unreachable -- but
       // `command` crosses a network/JSON boundary before it ever reaches applyMove (see
@@ -300,6 +302,31 @@ function handleDrawCard(
   };
 
   return { ok: true, state: { ...state, players: updatedPlayers, round }, events };
+}
+
+/** Server-only fallback for an elapsed turn-timeout (see Command's TIMEOUT doc comment). Pure
+ * delegation, not a new rule: AWAITING_STACK_RESPONSE absorbs the pending stack exactly like a
+ * real RESOLVE_STACK with no cardId; anything else (AWAITING_PLAY, including the R-4 follow-up
+ * window after a forced draw) goes through handleDrawCard exactly like a real DRAW_CARD --
+ * which already treats a second draw after hasDrawnThisTurn as "decline, end turn," so a
+ * player who times out again after being force-drawn a card auto-declines for free, no extra
+ * logic needed here. */
+function handleTimeout(
+  state: MatchState,
+  command: Extract<Command, { type: "TIMEOUT" }>,
+  rng: () => number,
+): ApplyMoveResult {
+  const result =
+    state.round.phase === "AWAITING_STACK_RESPONSE"
+      ? handleResolveStack(state, { type: "RESOLVE_STACK", playerId: command.playerId }, rng)
+      : handleDrawCard(state, { type: "DRAW_CARD", playerId: command.playerId }, rng);
+
+  if (!result.ok) return result;
+  return {
+    ok: true,
+    state: result.state,
+    events: [{ type: "PLAYER_TIMED_OUT", playerId: command.playerId }, ...result.events],
+  };
 }
 
 function handleResolveStack(

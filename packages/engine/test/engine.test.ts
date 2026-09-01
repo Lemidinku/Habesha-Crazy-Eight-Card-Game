@@ -836,3 +836,72 @@ describe("applyMove — draw, then choose to play or skip", () => {
     expect(result.events.some((e) => e.type === "CARD_DRAWN")).toBe(true);
   });
 });
+
+describe("applyMove — TIMEOUT (server-only)", () => {
+  it("force-draws a card during AWAITING_PLAY and marks it with PLAYER_TIMED_OUT", () => {
+    const state = makeMatch(
+      [
+        { playerId: "alice", hand: [card("3", "clubs")], matchScore: 0 },
+        { playerId: "bob", hand: [card("9")], matchScore: 0 },
+      ],
+      { drawPile: [card("Q", "hearts")] },
+    );
+    const result = applyMove(state, { type: "TIMEOUT", playerId: "alice" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.events).toEqual([
+      { type: "PLAYER_TIMED_OUT", playerId: "alice" },
+      { type: "CARD_DRAWN", playerId: "alice", card: card("Q", "hearts") },
+    ]);
+    expect(result.state.players[0]!.hand).toEqual([card("3", "clubs"), card("Q", "hearts")]);
+    expect(result.state.round.hasDrawnThisTurn).toBe(true);
+    expect(result.state.round.currentPlayerIndex).toBe(0); // still alice's follow-up decision
+  });
+
+  it("declines the R-4 follow-up and passes the turn if the player already drew this turn", () => {
+    const state = makeMatch(
+      [
+        { playerId: "alice", hand: [card("3", "clubs")], matchScore: 0 },
+        { playerId: "bob", hand: [card("9")], matchScore: 0 },
+      ],
+      { drawPile: [card("Q", "hearts")], hasDrawnThisTurn: true },
+    );
+    const result = applyMove(state, { type: "TIMEOUT", playerId: "alice" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.events).toEqual([{ type: "PLAYER_TIMED_OUT", playerId: "alice" }]);
+    expect(result.state.players[0]!.hand).toEqual([card("3", "clubs")]); // no card drawn
+    expect(result.state.round.currentPlayerIndex).toBe(1); // turn passed to bob
+    expect(result.state.round.hasDrawnThisTurn).toBeUndefined();
+  });
+
+  it("absorbs the pending draw-stack during AWAITING_STACK_RESPONSE", () => {
+    const state = makeMatch(
+      [{ playerId: "alice", hand: [], matchScore: 0 }],
+      {
+        phase: "AWAITING_STACK_RESPONSE",
+        pendingStack: { topCard: card("2", "spades"), accumulated: 2 },
+        drawPile: [card("3", "clubs"), card("4", "clubs")],
+      },
+    );
+    const result = applyMove(state, { type: "TIMEOUT", playerId: "alice" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.events).toContainEqual({ type: "PLAYER_TIMED_OUT", playerId: "alice" });
+    expect(result.events).toContainEqual({ type: "STACK_ABSORBED", playerId: "alice", drawnCount: 2 });
+    expect(result.state.players[0]!.hand).toHaveLength(2);
+    expect(result.state.round.phase).toBe("AWAITING_PLAY");
+  });
+
+  it("is turn-gated -- rejects a mismatched playerId with NOT_YOUR_TURN", () => {
+    const state = makeMatch([
+      { playerId: "alice", hand: [card("3", "clubs")], matchScore: 0 },
+      { playerId: "bob", hand: [card("9")], matchScore: 0 },
+    ]);
+    const result = applyMove(state, { type: "TIMEOUT", playerId: "bob" });
+    expect(result).toEqual({
+      ok: false,
+      error: { code: "NOT_YOUR_TURN", message: "It is not this player's turn." },
+    });
+  });
+});

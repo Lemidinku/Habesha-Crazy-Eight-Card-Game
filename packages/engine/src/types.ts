@@ -89,7 +89,12 @@ export type Command =
   | { type: "START_NEXT_ROUND"; playerId: string }
   | { type: "END_MATCH_EARLY"; playerId: string }
   /** Valid at any time the match is IN_PROGRESS, regardless of phase or whose turn it is. */
-  | { type: "ABANDON_MATCH"; playerId: string };
+  | { type: "ABANDON_MATCH"; playerId: string }
+  /** Server-only: RoomService issues this when a player's turn-timeout elapses (connected-idle,
+   * or disconnected-but-still-in-grace). Turn-gated exactly like PLAY_CARDS/DRAW_CARD/
+   * RESOLVE_STACK -- never added to the never-turn-gated list above. A client is never trusted
+   * to send this; apps/server's gateway rejects one on sight (see room.gateway.ts). */
+  | { type: "TIMEOUT"; playerId: string };
 
 export type DomainEvent =
   | { type: "CARDS_PLAYED"; playerId: string; cards: Card[] }
@@ -101,6 +106,11 @@ export type DomainEvent =
   | { type: "DIRECTION_REVERSED" }
   | { type: "DISCARD_RESHUFFLED_INTO_DRAW_PILE"; cardCount: number }
   | { type: "FRESH_DECK_ADDED_TO_DRAW_PILE"; cardCount: number }
+  /** Prepended in front of whichever real event a TIMEOUT's delegated fallback produces
+   * (CARD_DRAWN, STACK_ABSORBED, or nothing at all for a decline) -- a bare marker carrying no
+   * card/count data on purpose, so it needs no redaction.ts changes (unlike CARD_DRAWN, which
+   * hides its card from non-recipients). */
+  | { type: "PLAYER_TIMED_OUT"; playerId: string }
   | { type: "ROUND_ENDED"; winnerPlayerId: string; scores: Record<string, number> }
   | { type: "NEXT_ROUND_STARTED" }
   | { type: "MATCH_ENDED"; winnerPlayerId: string; finalScores: Record<string, number> }
