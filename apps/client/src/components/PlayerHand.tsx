@@ -2,7 +2,7 @@ import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { extendsStack, isLegalPlay, isWild, type Card, type Suit } from '@crazy8/engine';
 import { orderCardIdsForPlay } from '../lib/cardOrdering';
-import { suitTextClass, wildRingClass } from '../lib/cardDisplay';
+import { suitTextClass, wildRingClass, aceOfSpadesRingClass } from '../lib/cardDisplay';
 import { sendCommand } from '../lib/socket';
 import type { RedactedRoundState } from '../lib/wireTypes';
 import { useRoomStore } from '../store/roomStore';
@@ -92,7 +92,9 @@ export function PlayerHand({ selectedIds, setSelectedIds }: PlayerHandProps) {
               className={[
                 'w-16 h-24 rounded-lg flex items-center justify-center transition',
                 highlightable ? 'bg-card' : 'bg-card/45',
-                selected ? 'ring-2 ring-gold -translate-y-2 shadow-[0_4px_14px_rgba(0,0,0,0.4)]' : wildRingClass(card),
+                selected
+                  ? 'ring-2 ring-gold -translate-y-2 shadow-[0_4px_14px_rgba(0,0,0,0.4)]'
+                  : `${wildRingClass(card)} ${aceOfSpadesRingClass(card)}`,
                 !isMyTurn ? 'opacity-60' : highlightable ? 'cursor-pointer hover:-translate-y-1' : 'cursor-pointer',
               ].join(' ')}
             >
