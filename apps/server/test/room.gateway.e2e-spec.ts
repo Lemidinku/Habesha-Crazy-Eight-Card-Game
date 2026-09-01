@@ -284,4 +284,82 @@ describe('RoomGateway (e2e)', () => {
 
     expect(bobSyncAfterAutoPilot.round.currentPlayerIndex).toBe(1);
   }, 10000);
+
+  it('force-draws an idle player once their turn-timeout elapses', async () => {
+    const createRes = await request(app.getHttpServer())
+      .post('/rooms')
+      .send({ displayName: 'Alice', turnTimeoutMs: 10_000 })
+      .expect(201);
+    const createBody = createRes.body as {
+      roomId: string;
+      code: string;
+      playerId: string;
+      sessionToken: string;
+    };
+    const {
+      roomId,
+      code,
+      playerId: alicePlayerId,
+      sessionToken: aliceToken,
+    } = createBody;
+
+    const joinRes = await request(app.getHttpServer())
+      .post(`/rooms/${code}/join`)
+      .send({ displayName: 'Bob' })
+      .expect(201);
+    const joinBody = joinRes.body as { playerId: string; sessionToken: string };
+    const { playerId: bobPlayerId, sessionToken: bobToken } = joinBody;
+
+    const aliceSocket = connectSocket();
+    const bobSocket = connectSocket();
+    await Promise.all([
+      waitForEvent(aliceSocket, 'connect'),
+      waitForEvent(bobSocket, 'connect'),
+    ]);
+
+    aliceSocket.emit('room:join', {
+      roomId,
+      playerId: alicePlayerId,
+      sessionToken: aliceToken,
+    });
+    await waitForEvent(aliceSocket, 'room:sync');
+    bobSocket.emit('room:join', {
+      roomId,
+      playerId: bobPlayerId,
+      sessionToken: bobToken,
+    });
+    await waitForEvent(bobSocket, 'room:sync');
+
+    const bobStartSync = waitForEvent<{
+      round: { currentPlayerIndex: number };
+    }>(bobSocket, 'room:sync');
+    aliceSocket.emit('match:start');
+    const bobSyncAtStart = await bobStartSync;
+    // Seat 0 (Alice, the host) acts first.
+    expect(bobSyncAtStart.round.currentPlayerIndex).toBe(0);
+
+    // Alice does nothing. The server broadcasts PLAYER_TIMED_OUT and the real fallback action
+    // (CARD_DRAWN) back-to-back, synchronously, once her 10s turn-timeout elapses -- close
+    // enough together that two sequential `.once('event', ...)` awaits can race (the second
+    // listener isn't registered yet when the second message already arrives). A persistent
+    // collector plus a condition-based wait sidesteps that entirely.
+    const receivedEvents: Array<{ type: string; playerId?: string }> = [];
+    bobSocket.on('event', (event: { type: string; playerId?: string }) => {
+      receivedEvents.push(event);
+    });
+
+    await new Promise<void>((resolve) => {
+      const check = () => {
+        if (receivedEvents.length >= 2) resolve();
+        else setTimeout(check, 100);
+      };
+      check();
+    });
+
+    expect(receivedEvents[0]).toEqual({
+      type: 'PLAYER_TIMED_OUT',
+      playerId: alicePlayerId,
+    });
+    expect(receivedEvents[1].type).toBe('CARD_DRAWN');
+  }, 15000);
 });
