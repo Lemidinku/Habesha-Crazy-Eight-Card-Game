@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SUIT_SYMBOLS, formatCard, isRedSuit, suitTextClass, wildRingClass } from '../lib/cardDisplay';
 import { sendCommand } from '../lib/socket';
@@ -9,11 +9,33 @@ import { MatchEndOverlay } from './MatchEndOverlay';
 import { PlayerHand } from './PlayerHand';
 import { RoundEndOverlay } from './RoundEndOverlay';
 
+/** m:ss, e.g. 0:07 or 4:32. Purely cosmetic -- the server is the sole enforcement authority for
+ * when a turn actually times out; this is just what the countdown displays while ticking down. */
+function formatCountdown(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 export function GameTable() {
   const { t } = useTranslation();
   const room = useRoomStore((s) => s.room);
   const session = useRoomStore((s) => s.session);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const turnDeadlineAt = room?.turnDeadlineAt;
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (turnDeadlineAt === undefined) {
+      setSecondsLeft(null);
+      return;
+    }
+    const tick = () => setSecondsLeft(Math.max(0, Math.ceil((turnDeadlineAt - Date.now()) / 1000)));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [turnDeadlineAt]);
+
   if (!room || !session || !room.round) return null;
 
   const round = room.round;
@@ -143,6 +165,7 @@ export function GameTable() {
         {isMyTurn
           ? t('gameTable.yourTurn')
           : t('gameTable.playersTurn', { name: currentPlayer?.displayName ?? t('gameTable.unknownPlayer') })}
+        {secondsLeft !== null && ` · ${formatCountdown(secondsLeft)}`}
       </div>
 
       <PlayerHand selectedIds={selectedIds} setSelectedIds={setSelectedIds} />
