@@ -93,6 +93,7 @@
     "stackAbsorbed_one": "{{name}} drew {{count}} card from the stack",
     "stackAbsorbed_other": "{{name}} drew {{count}} cards from the stack",
     "cardDrawn": "{{name}} drew a card",
+    "playerTimedOut": "{{name}} ran out of time",
     "playerSkipped": "{{name}} was skipped",
     "directionReversed": "Direction reversed",
     "discardReshuffled": "Discard pile reshuffled into a new draw pile ({{count}} cards)",

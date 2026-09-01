@@ -34,6 +34,8 @@ function describeEvent(event: WireEvent, room: RedactedRoomSync, t: TFunction): 
       });
     case 'CARD_DRAWN':
       return t('activityFeed.cardDrawn', { name: playerName(room, event.playerId, t) });
+    case 'PLAYER_TIMED_OUT':
+      return t('activityFeed.playerTimedOut', { name: playerName(room, event.playerId, t) });
     case 'PLAYER_SKIPPED':
       return t('activityFeed.playerSkipped', { name: playerName(room, event.playerId, t) });
     case 'DIRECTION_REVERSED':
