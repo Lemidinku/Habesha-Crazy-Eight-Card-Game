@@ -160,3 +160,41 @@ describe('RoomController — displayName required', () => {
     );
   });
 });
+
+describe('RoomController — createRoom turnTimeoutMs validation', () => {
+  it('accepts a room created with no turnTimeoutMs override (defaults apply)', () => {
+    const { controller } = setup();
+    expect(() => controller.createRoom({ displayName: 'Alice' })).not.toThrow();
+  });
+
+  it('accepts turnTimeoutMs values within the safe range', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice', turnTimeoutMs: 10_000 }),
+    ).not.toThrow();
+    expect(() =>
+      controller.createRoom({ displayName: 'Bob', turnTimeoutMs: 300_000 }),
+    ).not.toThrow();
+  });
+
+  it('rejects a turnTimeoutMs below the minimum', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice', turnTimeoutMs: 5_000 }),
+    ).toThrow('TURN_TIMEOUT_OUT_OF_RANGE');
+  });
+
+  it('rejects a turnTimeoutMs above the maximum', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice', turnTimeoutMs: 600_000 }),
+    ).toThrow('TURN_TIMEOUT_OUT_OF_RANGE');
+  });
+
+  it('rejects a non-integer turnTimeoutMs', () => {
+    const { controller } = setup();
+    expect(() =>
+      controller.createRoom({ displayName: 'Alice', turnTimeoutMs: 10_000.5 }),
+    ).toThrow('TURN_TIMEOUT_OUT_OF_RANGE');
+  });
+});

@@ -12,6 +12,7 @@ interface CreateRoomBody {
   displayName: string;
   handSize?: number;
   reconnectGraceMs?: number;
+  turnTimeoutMs?: number;
 }
 
 interface JoinRoomBody {
@@ -34,6 +35,11 @@ const MAX_HAND_SIZE = 10;
  * seat from blocking a match indefinitely under FR-15's auto-pilot promise. */
 const MIN_RECONNECT_GRACE_MS = 5_000;
 const MAX_RECONNECT_GRACE_MS = 600_000;
+
+/** 10s floor keeps the timeout humanly playable (long enough to read a hand and decide); 5min
+ * ceiling keeps a connected-but-idle player from stalling the match indefinitely. */
+const MIN_TURN_TIMEOUT_MS = 10_000;
+const MAX_TURN_TIMEOUT_MS = 300_000;
 
 const MAX_DISPLAY_NAME_LENGTH = 32;
 
@@ -77,9 +83,20 @@ export class RoomController {
       }
     }
 
+    if (body.turnTimeoutMs !== undefined) {
+      if (
+        !Number.isInteger(body.turnTimeoutMs) ||
+        body.turnTimeoutMs < MIN_TURN_TIMEOUT_MS ||
+        body.turnTimeoutMs > MAX_TURN_TIMEOUT_MS
+      ) {
+        throw new BadRequestException('TURN_TIMEOUT_OUT_OF_RANGE');
+      }
+    }
+
     const { room, player } = this.roomService.createRoom(displayName, {
       handSize: body.handSize,
       reconnectGraceMs: body.reconnectGraceMs,
+      turnTimeoutMs: body.turnTimeoutMs,
     });
 
     return {

@@ -121,6 +121,7 @@
     "DISPLAY_NAME_TOO_LONG": "Name must be 32 characters or fewer.",
     "HAND_SIZE_OUT_OF_RANGE": "Hand size must be between 1 and 10.",
     "RECONNECT_GRACE_OUT_OF_RANGE": "Reconnect grace period must be between 5 seconds and 10 minutes.",
+    "TURN_TIMEOUT_OUT_OF_RANGE": "Turn timeout must be between 10 seconds and 5 minutes.",
     "INTERNAL_SERVER_ERROR": "Something went wrong on our end — please try again.",
     "NO_CARDS": "Select at least one card.",
     "DUPLICATE_CARD": "You selected the same card twice.",
