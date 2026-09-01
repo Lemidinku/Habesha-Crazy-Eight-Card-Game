@@ -53,6 +53,10 @@ export class RoomService {
     string,
     ReturnType<typeof setTimeout>
   >();
+  private readonly turnTimers = new Map<
+    string,
+    ReturnType<typeof setTimeout>
+  >();
   private readonly roomReapTimers = new Map<
     string,
     ReturnType<typeof setTimeout>
@@ -92,6 +96,7 @@ export class RoomService {
     const settings: RoomSettings = {
       handSize: settingsOverride.handSize ?? 7,
       reconnectGraceMs: settingsOverride.reconnectGraceMs ?? 60_000,
+      turnTimeoutMs: settingsOverride.turnTimeoutMs ?? 30_000,
     };
     const room: Room = {
       id: randomUUID(),
@@ -303,8 +308,67 @@ export class RoomService {
       events.push(...result.events);
     }
 
+    this.scheduleTurnTimer(current);
     this.roomStore.save(current);
     return { room: current, events };
+  }
+
+  /** Arms (or clears) the turn-timeout timer for whoever must currently act. Always called from
+   * resolveAutoPilotChain -- the same single choke point every command and every fallback
+   * already flows through -- so it re-arms automatically for every new decision point,
+   * including the R-4 follow-up window right after a forced draw. Mutates `room.turnDeadlineAt`
+   * in place; the caller (resolveAutoPilotChain) persists it via its own subsequent save. */
+  private scheduleTurnTimer(room: Room): void {
+    this.clearTurnTimer(room.id);
+
+    const needsTimer =
+      room.match?.matchStatus === 'IN_PROGRESS' &&
+      room.match.round.phase !== 'ROUND_SCORING';
+
+    if (!needsTimer) {
+      room.turnDeadlineAt = undefined;
+      return;
+    }
+
+    const currentPlayerId =
+      room.match!.players[room.match!.round.currentPlayerIndex].playerId;
+    room.turnDeadlineAt = Date.now() + room.settings.turnTimeoutMs;
+
+    const timer = setTimeout(() => {
+      this.turnTimers.delete(room.id);
+      this.handleTurnTimeout(room.id, currentPlayerId);
+    }, room.settings.turnTimeoutMs);
+    this.turnTimers.set(room.id, timer);
+  }
+
+  private handleTurnTimeout(roomId: string, playerId: string): void {
+    const room = this.roomStore.get(roomId);
+    if (!room || !room.match || room.match.matchStatus !== 'IN_PROGRESS') return;
+    // Defensive re-check: only fire if it's still exactly this player's turn -- a real command
+    // already clears this timer via scheduleTurnTimer before this callback could ever run, so
+    // this guards a theoretical race rather than a reachable one (kept explicit anyway, same
+    // spirit as this file's other "not currently reachable, but not load-bearing" checks).
+    const stillCurrentPlayerId =
+      room.match.players[room.match.round.currentPlayerIndex]?.playerId;
+    if (stillCurrentPlayerId !== playerId) return;
+
+    const result = applyMove(room.match, { type: 'TIMEOUT', playerId });
+    if (!result.ok) return; // TIMEOUT should always be legal here; this is just a safety net.
+
+    room.match = result.state;
+    if (room.match.matchStatus === 'MATCH_END') room.status = 'MATCH_END';
+    this.roomStore.save(room);
+
+    const { events } = this.resolveAutoPilotChain(room, result.events);
+    this.emitRoomUpdated(roomId, events);
+  }
+
+  private clearTurnTimer(roomId: string): void {
+    const existing = this.turnTimers.get(roomId);
+    if (existing) {
+      clearTimeout(existing);
+      this.turnTimers.delete(roomId);
+    }
   }
 
   /** Picks the auto-pilot fallback command for the room's current state, or null if nobody

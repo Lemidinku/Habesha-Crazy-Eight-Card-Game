@@ -522,3 +522,155 @@ describe('RoomService — lifecycle logging', () => {
     logSpy.mockRestore();
   });
 });
+
+describe('RoomService — turn timeout', () => {
+  it('force-draws a connected, idle player once turnTimeoutMs elapses', () => {
+    vi.useFakeTimers();
+    try {
+      const { service } = setup();
+      const { room, player: host } = service.createRoom('Alice', {
+        turnTimeoutMs: 10_000,
+      });
+      const joined = service.joinRoom(room.code, 'Bob');
+      if (!joined.ok) throw new Error('setup failed');
+      service.startMatch(room.id, host.playerId);
+
+      const matchBefore = service.getRoom(room.id)!.match!;
+      const upNextPlayerId =
+        matchBefore.players[matchBefore.round.currentPlayerIndex].playerId;
+
+      const updates: Array<{ roomId: string; events: unknown[] }> = [];
+      service.onRoomUpdated((roomId, events) => updates.push({ roomId, events }));
+
+      vi.advanceTimersByTime(10_000);
+
+      expect(updates).toHaveLength(1);
+      expect(
+        updates[0].events.some(
+          (e) => (e as { type: string }).type === 'PLAYER_TIMED_OUT',
+        ),
+      ).toBe(true);
+      const matchAfter = service.getRoom(room.id)!.match!;
+      const idlePlayerAfter = matchAfter.players.find(
+        (p) => p.playerId === upNextPlayerId,
+      )!;
+      expect(idlePlayerAfter.hand.length).toBeGreaterThan(7); // started with 7, forced draw adds 1
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('auto-declines the R-4 follow-up and passes the turn if the idle player times out again after being force-drawn', () => {
+    vi.useFakeTimers();
+    try {
+      const { service } = setup();
+      const { room, player: host } = service.createRoom('Alice', {
+        turnTimeoutMs: 10_000,
+      });
+      const joined = service.joinRoom(room.code, 'Bob');
+      if (!joined.ok) throw new Error('setup failed');
+      service.startMatch(room.id, host.playerId);
+
+      // Simulate "already force-drawn once, now facing the R-4 follow-up decision" directly,
+      // rather than depending on which random card the first forced draw happened to produce.
+      const match = service.getRoom(room.id)!.match!;
+      match.round.hasDrawnThisTurn = true;
+      const upNextPlayerId = match.players[match.round.currentPlayerIndex].playerId;
+
+      vi.advanceTimersByTime(10_000);
+
+      const matchAfter = service.getRoom(room.id)!.match!;
+      expect(matchAfter.round.hasDrawnThisTurn).toBeUndefined();
+      expect(
+        matchAfter.players[matchAfter.round.currentPlayerIndex].playerId,
+      ).not.toBe(upNextPlayerId);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('still force-acts for a disconnected player within their reconnect grace period, independent of the 60s grace timer', () => {
+    vi.useFakeTimers();
+    try {
+      const { service } = setup();
+      const { room, player: host } = service.createRoom('Alice', {
+        turnTimeoutMs: 10_000,
+      });
+      const joined = service.joinRoom(room.code, 'Bob');
+      if (!joined.ok) throw new Error('setup failed');
+      service.startMatch(room.id, host.playerId);
+
+      const matchBefore = service.getRoom(room.id)!.match!;
+      const upNextPlayerId =
+        matchBefore.players[matchBefore.round.currentPlayerIndex].playerId;
+
+      service.markDisconnected(room.id, upNextPlayerId);
+      vi.advanceTimersByTime(10_000); // well before the (default 60s) reconnect grace period
+
+      const playerAfter = service
+        .getRoom(room.id)!
+        .players.find((p) => p.playerId === upNextPlayerId)!;
+      expect(playerAfter.autoPilot).toBe(false); // grace period hasn't expired yet
+
+      const matchAfter = service.getRoom(room.id)!.match!;
+      expect(
+        matchAfter.players.find((p) => p.playerId === upNextPlayerId)!.hand
+          .length,
+      ).toBeGreaterThan(7);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not arm a turn timer during ROUND_SCORING -- the host-decision pause is out of scope', () => {
+    vi.useFakeTimers();
+    try {
+      const { service } = setup();
+      const { room, player: host } = service.createRoom('Alice', {
+        turnTimeoutMs: 10_000,
+      });
+      const joined = service.joinRoom(room.code, 'Bob');
+      if (!joined.ok) throw new Error('setup failed');
+      service.startMatch(room.id, host.playerId);
+
+      const match = service.getRoom(room.id)!.match!;
+      const upNextIndex = match.round.currentPlayerIndex;
+      const upNext = match.players[upNextIndex];
+      const forcedCard = {
+        id: 'forced-2-hearts',
+        suit: 'hearts' as const,
+        rank: '2' as const,
+      };
+      match.players[upNextIndex] = { ...upNext, hand: [forcedCard] };
+      match.round.currentSuit = forcedCard.suit;
+      match.round.currentRank = forcedCard.rank;
+      const result = service.handleCommand(room.id, {
+        type: 'PLAY_CARDS',
+        playerId: upNext.playerId,
+        cardIds: [forcedCard.id],
+      });
+      if (!result.ok) throw new Error(`setup play failed: ${result.error}`);
+      expect(service.getRoom(room.id)!.match!.round.phase).toBe(
+        'ROUND_SCORING',
+      );
+
+      const updates: Array<{ roomId: string; events: unknown[] }> = [];
+      service.onRoomUpdated((roomId, events) => updates.push({ roomId, events }));
+
+      vi.advanceTimersByTime(10_000);
+
+      expect(updates).toHaveLength(0);
+      expect(service.getRoom(room.id)!.match!.round.phase).toBe(
+        'ROUND_SCORING',
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('defaults turnTimeoutMs to 30 seconds when not overridden', () => {
+    const { service } = setup();
+    const { room } = service.createRoom('Alice');
+    expect(room.settings.turnTimeoutMs).toBe(30_000);
+  });
+});
