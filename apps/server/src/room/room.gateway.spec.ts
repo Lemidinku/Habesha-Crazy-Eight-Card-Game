@@ -109,13 +109,17 @@ describe('RoomGateway — TIMEOUT is server-only', () => {
 
     const handleCommandSpy = vi.spyOn(service, 'handleCommand');
 
-    gateway.handleCommand(
-      socket,
-      { type: 'TIMEOUT', playerId: player.playerId } as unknown as Command,
-    );
+    gateway.handleCommand(socket, {
+      type: 'TIMEOUT',
+      playerId: player.playerId,
+    } as unknown as Command);
 
     expect(handleCommandSpy).not.toHaveBeenCalled();
-    expect(socket.emit).toHaveBeenCalledWith('error', {
+    // Narrowed to a plain function-typed property (not socket.io's method-shorthand `emit`)
+    // so asserting on it doesn't trip @typescript-eslint/unbound-method.
+    const emit = (socket as unknown as { emit: (...args: unknown[]) => void })
+      .emit;
+    expect(emit).toHaveBeenCalledWith('error', {
       code: 'FORBIDDEN_COMMAND',
       message: 'That action cannot be requested directly.',
     });
