@@ -117,6 +117,7 @@
     "ROOM_OR_MATCH_NOT_FOUND": "That room or match doesn't exist.",
     "INVALID_SESSION": "Your session is no longer valid — please rejoin.",
     "NOT_JOINED": "Join the room before doing that.",
+    "FORBIDDEN_COMMAND": "That action isn't allowed.",
     "DISPLAY_NAME_REQUIRED": "Enter a name first.",
     "DISPLAY_NAME_TOO_LONG": "Name must be 32 characters or fewer.",
     "HAND_SIZE_OUT_OF_RANGE": "Hand size must be between 1 and 10.",

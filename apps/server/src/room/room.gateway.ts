@@ -156,6 +156,17 @@ export class RoomGateway implements OnModuleInit, OnGatewayDisconnect {
       return;
     }
 
+    // TIMEOUT is server-only (RoomService issues it directly, never via this socket path) --
+    // a client-supplied one is either a bug or an attempt to force another player's turn to
+    // advance early. Rejected before it ever reaches RoomService.
+    if (command.type === 'TIMEOUT') {
+      client.emit('error', {
+        code: 'FORBIDDEN_COMMAND',
+        message: 'That action cannot be requested directly.',
+      });
+      return;
+    }
+
     // NFR-6: the socket's authenticated identity is the source of truth for who this command
     // is from -- never the client-supplied playerId in the payload.
     const trustedCommand: Command = { ...command, playerId };

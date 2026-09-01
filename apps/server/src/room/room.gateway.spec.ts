@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { Command } from '@crazy8/engine';
 import type { Socket } from 'socket.io';
 import { RoomGateway } from './room.gateway';
 import { RoomService } from './room.service';
@@ -89,5 +90,34 @@ describe('RoomGateway — stale disconnect after a fast reconnect', () => {
       gateway as unknown as { socketsByRoom: Map<string, Map<string, Socket>> }
     ).socketsByRoom;
     expect(socketsByRoom.get(room.id)?.get(player.playerId)).toBeUndefined();
+  });
+});
+
+describe('RoomGateway — TIMEOUT is server-only', () => {
+  it('rejects a client-sent TIMEOUT command with FORBIDDEN_COMMAND, never reaching RoomService', () => {
+    const { service, gateway } = setup();
+    const { room, player } = service.createRoom('Alice');
+    service.joinRoom(room.code, 'Bob');
+    service.startMatch(room.id, player.playerId);
+
+    const socket = fakeSocket();
+    gateway.handleJoin(socket, {
+      roomId: room.id,
+      playerId: player.playerId,
+      sessionToken: player.sessionToken,
+    });
+
+    const handleCommandSpy = vi.spyOn(service, 'handleCommand');
+
+    gateway.handleCommand(
+      socket,
+      { type: 'TIMEOUT', playerId: player.playerId } as unknown as Command,
+    );
+
+    expect(handleCommandSpy).not.toHaveBeenCalled();
+    expect(socket.emit).toHaveBeenCalledWith('error', {
+      code: 'FORBIDDEN_COMMAND',
+      message: 'That action cannot be requested directly.',
+    });
   });
 });
