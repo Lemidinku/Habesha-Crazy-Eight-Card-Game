@@ -82,13 +82,13 @@ export function GameTable() {
                 ? 'bg-jade/15 border-jade text-jade'
                 : 'bg-felt-raised border-card/10 text-card/70',
               p.handCount === 1
-                ? 'ring-2 ring-gold shadow-[0_0_10px_var(--color-gold)] animate-pulse motion-reduce:animate-none'
+                ? 'ring-2 ring-crimson shadow-[0_0_10px_var(--color-crimson)] animate-pulse motion-reduce:animate-none'
                 : '',
             ].join(' ')}
           >
             <div className="font-medium text-card">
               {p.displayName}
-              {p.handCount === 1 && <span className="text-gold text-xs ml-1.5">{t('gameTable.lastCard')}</span>}
+              {p.handCount === 1 && <span className="text-crimson text-xs ml-1.5">{t('gameTable.lastCard')}</span>}
             </div>
             <div className="font-display text-2xl font-bold leading-tight text-card">
               {p.handCount} <span className="text-xs font-body font-normal text-card/50">{t('gameTable.cardsUnitLabel')}</span>
