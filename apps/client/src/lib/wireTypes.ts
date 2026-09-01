@@ -35,6 +35,7 @@ export interface RedactedRoundState {
 export interface RoomSettings {
   handSize: number;
   reconnectGraceMs: number;
+  turnTimeoutMs: number;
 }
 
 export type RoomStatus = 'LOBBY' | 'IN_PROGRESS' | 'MATCH_END';
@@ -49,6 +50,7 @@ export interface RedactedRoomSync {
   round?: RedactedRoundState;
   handSize?: number;
   matchStatus?: 'IN_PROGRESS' | 'MATCH_END';
+  turnDeadlineAt?: number;
 }
 
 export type WireEvent = Exclude<DomainEvent, { type: 'CARD_DRAWN' }> | { type: 'CARD_DRAWN'; playerId: string; card?: Card };

@@ -29,6 +29,7 @@ function makeRoom(): Room {
       phase: 'AWAITING_PLAY',
       drawPile: [card('4', 'clubs'), card('5', 'clubs'), card('6', 'clubs')],
       discardPile: [card('Q', 'hearts')],
+      decksInPlay: 1,
       currentSuit: 'hearts',
       currentRank: 'Q',
       direction: 1,
@@ -46,7 +47,7 @@ function makeRoom(): Room {
     id: 'room-1',
     code: 'ABCDEF',
     hostPlayerId: 'alice',
-    settings: { handSize: 7, reconnectGraceMs: 60_000 },
+    settings: { handSize: 7, reconnectGraceMs: 60_000, turnTimeoutMs: 30_000 },
     players: [
       {
         playerId: 'alice',
@@ -111,6 +112,19 @@ describe('redactRoomForPlayer', () => {
     const view = redactRoomForPlayer(room, 'alice');
     expect(view.round).toBeUndefined();
     expect(view.matchStatus).toBeUndefined();
+  });
+
+  it('includes turnDeadlineAt when present on the room', () => {
+    const room = makeRoom();
+    room.turnDeadlineAt = 1_700_000_000_000;
+    const view = redactRoomForPlayer(room, 'alice');
+    expect(view.turnDeadlineAt).toBe(1_700_000_000_000);
+  });
+
+  it('omits turnDeadlineAt when the room has none set', () => {
+    const room = makeRoom();
+    const view = redactRoomForPlayer(room, 'alice');
+    expect(view.turnDeadlineAt).toBeUndefined();
   });
 });
 

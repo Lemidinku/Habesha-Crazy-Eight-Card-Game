@@ -46,6 +46,7 @@ export interface RedactedRoomSync {
   round?: RedactedRoundState;
   handSize?: number;
   matchStatus?: 'IN_PROGRESS' | 'MATCH_END';
+  turnDeadlineAt?: number;
 }
 
 function redactRoundState(round: RoundState): RedactedRoundState {
@@ -101,6 +102,7 @@ export function redactRoomForPlayer(
           matchStatus: room.match.matchStatus,
         }
       : {}),
+    ...(room.turnDeadlineAt !== undefined ? { turnDeadlineAt: room.turnDeadlineAt } : {}),
   };
 }
 
