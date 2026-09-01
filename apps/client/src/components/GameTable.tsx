@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SUIT_SYMBOLS, formatCard, isRedSuit, suitTextClass, wildRingClass, aceOfSpadesRingClass } from '../lib/cardDisplay';
+import { SUIT_SYMBOLS, formatCard, isRedSuit, suitTextClass, wildRingClass } from '../lib/cardDisplay';
 import { sendCommand } from '../lib/socket';
 import { useRoomStore } from '../store/roomStore';
 import { ActivityFeed } from './ActivityFeed';
@@ -123,7 +123,7 @@ export function GameTable() {
           <div
             className={[
               'w-16 h-24 rounded-lg bg-card flex items-center justify-center',
-              topCard ? `${wildRingClass(topCard)} ${aceOfSpadesRingClass(topCard)}` : '',
+              topCard ? wildRingClass(topCard) : '',
             ].join(' ')}
           >
             {topCard ? (
